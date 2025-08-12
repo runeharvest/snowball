@@ -1,0 +1,61 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 19,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "linux",
+      "displayName": "Linux",
+      "description": "Debug build with debug info",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_COMPILER_LAUNCHER": "ccache",
+        "CMAKE_CXX_COMPILER_LAUNCHER": "ccache",
+        "CMAKE_C_COMPILER": "/usr/bin/gcc",
+        "CMAKE_CXX_COMPILER": "/usr/bin/g++",
+        "WITH_SNOWBALLS_SERVER": "ON",
+        "WITH_SNOWBALLS_CLIENT": "ON",
+        "WITH_SNOWBALLS_PACKAGE": "OFF"
+      }
+    },
+    {
+      "name": "linux-server",
+      "displayName": "Linux Server Only",
+      "description": "Debug build with debug info",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_COMPILER_LAUNCHER": "ccache",
+        "CMAKE_CXX_COMPILER_LAUNCHER": "ccache",
+        "CMAKE_C_COMPILER": "/usr/bin/gcc",
+        "CMAKE_CXX_COMPILER": "/usr/bin/g++",
+        "WITH_SNOWBALLS_SERVER": "ON",
+        "WITH_SNOWBALLS_CLIENT": "OFF",
+        "WITH_SNOWBALLS_PACKAGE": "ON"
+      }
+    },
+    {
+      "name": "linux-client",
+      "displayName": "Linux Client Only",
+      "description": "Debug build with debug info",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_COMPILER_LAUNCHER": "ccache",
+        "CMAKE_CXX_COMPILER_LAUNCHER": "ccache",
+        "CMAKE_C_COMPILER": "/usr/bin/gcc",
+        "CMAKE_CXX_COMPILER": "/usr/bin/g++",
+        "WITH_SNOWBALLS_SERVER": "ON",
+        "WITH_SNOWBALLS_CLIENT": "OFF",
+        "WITH_SNOWBALLS_PACKAGE": "ON"
+      }
+    }
+  ]
+}

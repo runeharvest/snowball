@@ -1,41 +1,216 @@
-# Prerequisites
-*.d
+syntax: glob
 
-# Compiled Object files
-*.slo
-*.lo
-*.o
+# Various build directories
+bin
+obj
+Debug
+Release
+ReleaseDebug
+DebugFast
+ReleaseDebugStatic
+DebugFastStatic
+
+# Test and application directories
+screenshots
+release
+test
+Temp
+
+# NeL cache
+*.packed_sheets
+
+# Ryzom save
+save_shard
+last_loaded_char.bin
+*.binprim
+*.string_cache
+graphs_output
+default_c
+
+# Windows compile
+*.exe
+*.dll
+*.lib
 *.obj
 
-# Precompiled Headers
-*.gch
-*.pch
-
-# Linker files
-*.ilk
-
-# Debugger Files
-*.pdb
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
+# Linux compile
 *.a
-*.lib
+*.la
+*.lo
+*.Po
+*.Plo
+*.o
+*.so
+*.so.*
+*_debug
+*.pc
+*.gch
 
-# Executables
-*.exe
-*.out
-*.app
+# Mac OS X compile
+*.dylib
 
-# debug information files
-*.dwo
+# Log dump files
+report_refused
+report_failed
+exception_catched
+*.stat
+*.log
+log.txt
+
+# Max plugin extensions
+*.dlx
+*.dlm
+*.dlu
+
+# makeall build
+.mode_static
+
+# cmake build files & directories
+CMakeFiles
+CMakeCache.txt
+cmake_install.cmake
+CTestTestfile.cmake
+CPackConfig.cmake
+CPackSourceConfig.cmake
+.libs
+
+# Linux garbage
+aclocal.m4
+config.guess
+config.sub
+configure
+depcomp
+config.h.in
+nelconfig.h.in
+install-sh
+ltmain.sh
+missing
+ylwrap
+*.mk
+
+# Visual Studio garbage
+*.opensdf
+UpgradeLog*.XML
+_UpgradeReport_Files
+BuildLog.htm
+mt.dep
+ipch
+*.suo
+*.ncb
+*.user
+*.ilk
+*.pdb
+*.aps
+*.exp
+*.idb
+*.sdf
+
+# Mac OS X garbage
+.DS_Store
+
+# Ryzom server garbage
+aes_alias_name.cfg
+aes_nagios_report.txt
+aes_state.txt
+*.launch_ctrl
+*.state
+*.start_count
+
+# Vim and kwrite cache
+*~
+
+# Kdevelop4 garbage
+*.kdev4
+.kdev4
+
+# intellij project folder
+.idea/
+
+
+# Python cache
+*.pyd
+*.pyc
+
+# Qt compiler
+moc_*.cpp
+*.moc
+
+# Misc garbage
+*.rej
+*.orig
+*.cachefile
+*.cache
+*.patch
+*.7z
+.svn
+thumbs.db
+Thumbs.db
+*.tpl.php
+.SyncID
+.SyncIgnore
+.SyncArchive
+
+# build
+nel/build/*
+nelns/build/*
+snowballs/build/*
+ryzom/build/*
+build/*
+build-2010/*
+install/*
+build_*
+install_*
+nel/tools/build_gamedata/configuration/buildsite.py
+cmake-build-*
+
+
+# WebTT temp dir
+ryzom/tools/server/www/webtt/app/tmp
+
+# AMS ignore
+web/public_php/ams/is_installed
+web/docs/ams/html
+web/public_php/ams/templates_c
+ryzom/tools/server/ryzom_ams/drupal
+ryzom/tools/server/ryzom_ams/drupal_module/ryzommanage/ams_lib/autoload
+ryzom/tools/server/ryzom_ams/drupal_module/ryzommanage/ams_lib/configs
+ryzom/tools/server/ryzom_ams/drupal_module/ryzommanage/ams_lib/cron
+ryzom/tools/server/ryzom_ams/drupal_module/ryzommanage/ams_lib/img
+ryzom/tools/server/ryzom_ams/drupal_module/ryzommanage/ams_lib/plugins
+ryzom/tools/server/ryzom_ams/drupal_module/ryzommanage/ams_lib/smarty
+ryzom/tools/server/ryzom_ams/drupal_module/ryzommanage/ams_lib/translations
+ryzom/tools/server/ryzom_ams/drupal_module/ryzommanage/ams_lib/libinclude.php
+ryzom/tools/server/ryzom_ams/old
+
+
+
+# Tools and external directories
+external
+external_stlport
+nel_tools*
+ryzom_tools*
+
+#personal projects
+personal/
+
+# Dumps
+*.dmp
+
+web/public_php/config.php
+web/public_php/is_installed
+web/public_php/ams/files
+web/public_php/db_version_lib
+web/public_php/db_version_shard
+web/public_php/db_version_tool
+web/public_php/db_version_web
+web/public_php/role_service
+web/public_php/role_support
+web/public_php/role_admin
+web/public_php/role_domain
+web/public_php/db_version_ring
+web/public_php/config_user.php
+nel/tools/build_gamedata/processes/pz/build_world_packed_col.cfg
+nel/tools/build_gamedata/processes/cartographer/island_screenshots.cfg
+
+# machine specific files
+CMakeUserPresets.json

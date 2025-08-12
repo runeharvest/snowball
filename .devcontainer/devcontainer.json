@@ -1,0 +1,44 @@
+{
+  "name": "snowball",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "containerUser": "vscode",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.cpptools-extension-pack",
+        "xaver.clang-format",
+        "bibhasdn.unique-lines",
+        "Gruntfuggly.todo-tree",
+        "eriklynd.json-tools",
+        "maattdd.gitless"
+      ],
+      "settings": {
+        "cmake.configureArgs": [
+          "-DWITH_STATIC=ON",
+          "-DWITH_NEL_TESTS=OFF",
+          "-DWITH_NEL_SAMPLES=ON",
+          "-DWITH_LUA51=OFF",
+          "-DWITH_LUA52=ON",
+          "-DWITH_RYZOM=ON",
+          "-DWITH_RYZOM_SERVER=ON",
+          "-DWITH_RYZOM_CLIENT=ON",
+          "-DWITH_RYZOM_TOOLS=ON",
+          "-DWITH_NEL_TOOLS=ON",
+          "-DWITH_NELNS=ON",
+          "-DWITH_NELNS_LOGIN_SYSTEM=ON",
+          "-DWITH_NELNS_SERVER=ON",
+          "-DWITH_LIBGSF=ON",
+          "-DWITH_MONGODB=OFF",
+          "-DWITH_PCH=OFF"
+        ]
+      }
+    }
+  },
+  "workspaceFolder": "/src",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/src,type=bind,consistency=cached",
+  "mounts": [
+    "source=${localWorkspaceFolder}/../shared,target=/src/shared,type=bind"
+  ]
+}
