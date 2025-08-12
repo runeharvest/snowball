@@ -1,8 +1,9 @@
 
 init:
-	mkdir -p build/bin/config
-	mkdir -p build/bin/logs
-	cp -r base/*.cfg build/bin/config
+	@mkdir -p build/bin/config
+	@mkdir -p build/bin/logs
+	@cp -r base/*.cfg build/bin
+	@echo "Initialized base/*.cfg files into build/bin/"
 
 # valid options include: naming_service, login_server, welcome_service, position_service, chat_service, collision_service, frontend_service, snowballs_client
 .PHONY: run-%
