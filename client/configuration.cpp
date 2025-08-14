@@ -67,7 +67,7 @@ bool CConfiguration::init()
 	CConfigFile::CVar *var;
 	var = ConfigFile->getVarPtr("SearchPaths");
 	nlassert(var && "Critical error: Missing config variable 'SearchPaths'");
-	
+
 	uint varsize = var->size();
 	for (uint i = 0; i < varsize; ++i)
 		CPath::addSearchPath(var->asString(i), true, false);

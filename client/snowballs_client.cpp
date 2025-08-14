@@ -1225,139 +1225,139 @@ sint main(int argc, char **argv)
 		FILE *f = _tfopen(_T(SBCLIENT_CONFIG_FILE_DEFAULT), _T("r"));
 		if (!f)
 		{
-		f = _tfopen(_T(SBCLIENT_CONFIG_FILE), _T("r"));
-		if (!f)
-		{
-			return EXIT_FAILURE;
+			f = _tfopen(_T(SBCLIENT_CONFIG_FILE), _T("r"));
+			if (!f)
+			{
+				return EXIT_FAILURE;
+			}
+			fclose(f);
 		}
-		fclose(f);
-	}
 #endif
 
-	// go nel!
+		// go nel!
+		{
+			// use log.log if NEL_LOG_IN_FILE and SBCLIENT_USE_LOG_LOG defined as 1
+			createDebug(NULL, SBCLIENT_USE_LOG_LOG, false);
+			INelContext::getInstance().setWindowedApplication(true);
+
+#if SBCLIENT_USE_LOG
+			// create snowballs_client.log
+			// filedisplayer only deletes the 001 etc
+			if (SBCLIENT_ERASE_LOG && CFile::isExists(SBCLIENT_LOG_FILE))
+				CFile::deleteFile(SBCLIENT_LOG_FILE);
+			// initialize the log file
+			SBCLIENT::_FileDisplayer = new CFileDisplayer();
+			SBCLIENT::_FileDisplayer->setParam(SBCLIENT_LOG_FILE, SBCLIENT_ERASE_LOG);
+			DebugLog->addDisplayer(SBCLIENT::_FileDisplayer);
+			InfoLog->addDisplayer(SBCLIENT::_FileDisplayer);
+			WarningLog->addDisplayer(SBCLIENT::_FileDisplayer);
+			AssertLog->addDisplayer(SBCLIENT::_FileDisplayer);
+			ErrorLog->addDisplayer(SBCLIENT::_FileDisplayer);
+#endif
+
+			nlinfo("Welcome to NeL!");
+		}
+
+		SBCLIENT::CSnowballsClient::init();
+		exit(SBCLIENT::CSnowballsClient::run() ? EXIT_SUCCESS : EXIT_FAILURE);
+		return EXIT_FAILURE;
+	}
+	void end()
 	{
-		// use log.log if NEL_LOG_IN_FILE and SBCLIENT_USE_LOG_LOG defined as 1
-		createDebug(NULL, SBCLIENT_USE_LOG_LOG, false);
-		INelContext::getInstance().setWindowedApplication(true);
+		SBCLIENT::CSnowballsClient::release();
+		nlinfo("See you later!");
 
 #if SBCLIENT_USE_LOG
-		// create snowballs_client.log
-		// filedisplayer only deletes the 001 etc
-		if (SBCLIENT_ERASE_LOG && CFile::isExists(SBCLIENT_LOG_FILE))
-			CFile::deleteFile(SBCLIENT_LOG_FILE);
-		// initialize the log file
-		SBCLIENT::_FileDisplayer = new CFileDisplayer();
-		SBCLIENT::_FileDisplayer->setParam(SBCLIENT_LOG_FILE, SBCLIENT_ERASE_LOG);
-		DebugLog->addDisplayer(SBCLIENT::_FileDisplayer);
-		InfoLog->addDisplayer(SBCLIENT::_FileDisplayer);
-		WarningLog->addDisplayer(SBCLIENT::_FileDisplayer);
-		AssertLog->addDisplayer(SBCLIENT::_FileDisplayer);
-		ErrorLog->addDisplayer(SBCLIENT::_FileDisplayer);
+		DebugLog->removeDisplayer(SBCLIENT::_FileDisplayer);
+		InfoLog->removeDisplayer(SBCLIENT::_FileDisplayer);
+		WarningLog->removeDisplayer(SBCLIENT::_FileDisplayer);
+		AssertLog->removeDisplayer(SBCLIENT::_FileDisplayer);
+		ErrorLog->removeDisplayer(SBCLIENT::_FileDisplayer);
+		delete SBCLIENT::_FileDisplayer;
+		SBCLIENT::_FileDisplayer = NULL;
 #endif
-
-		nlinfo("Welcome to NeL!");
 	}
 
-	SBCLIENT::CSnowballsClient::init();
-	exit(SBCLIENT::CSnowballsClient::run() ? EXIT_SUCCESS : EXIT_FAILURE);
-	return EXIT_FAILURE;
-}
-void end()
-{
-	SBCLIENT::CSnowballsClient::release();
-	nlinfo("See you later!");
+	// Command to quit the client
+	NLMISC_COMMAND(sb_quit, "quit the client", "")
+	{
+		// check args, if there s not the right number of parameter, return bad
+		if (args.size() != 0) return false;
 
-#if SBCLIENT_USE_LOG
-	DebugLog->removeDisplayer(SBCLIENT::_FileDisplayer);
-	InfoLog->removeDisplayer(SBCLIENT::_FileDisplayer);
-	WarningLog->removeDisplayer(SBCLIENT::_FileDisplayer);
-	AssertLog->removeDisplayer(SBCLIENT::_FileDisplayer);
-	ErrorLog->removeDisplayer(SBCLIENT::_FileDisplayer);
-	delete SBCLIENT::_FileDisplayer;
-	SBCLIENT::_FileDisplayer = NULL;
-#endif
-}
+		log.displayNL("Exit requested");
 
-// Command to quit the client
-NLMISC_COMMAND(sb_quit, "quit the client", "")
-{
-	// check args, if there s not the right number of parameter, return bad
-	if (args.size() != 0) return false;
+		SBCLIENT::NextGameState = SBCLIENT::GameStateExit;
 
-	log.displayNL("Exit requested");
+		return true;
+	}
 
-	SBCLIENT::NextGameState = SBCLIENT::GameStateExit;
+	NLMISC_COMMAND(sb_offline, "go offline", "")
+	{
+		if (args.size() != 0) return false;
+		SBCLIENT::NextGameState = SBCLIENT::GameStateOffline;
+		return true;
+	}
 
-	return true;
-}
+	NLMISC_COMMAND(sb_unload, "unload game", "")
+	{
+		if (args.size() != 0) return false;
+		SBCLIENT::NextGameState = SBCLIENT::GameStateUnload;
+		return true;
+	}
 
-NLMISC_COMMAND(sb_offline, "go offline", "")
-{
-	if (args.size() != 0) return false;
-	SBCLIENT::NextGameState = SBCLIENT::GameStateOffline;
-	return true;
-}
+	NLMISC_COMMAND(sb_reset, "reset game", "")
+	{
+		if (args.size() != 0) return false;
+		SBCLIENT::NextGameState = SBCLIENT::GameStateReset;
+		return true;
+	}
 
-NLMISC_COMMAND(sb_unload, "unload game", "")
-{
-	if (args.size() != 0) return false;
-	SBCLIENT::NextGameState = SBCLIENT::GameStateUnload;
-	return true;
-}
-
-NLMISC_COMMAND(sb_reset, "reset game", "")
-{
-	if (args.size() != 0) return false;
-	SBCLIENT::NextGameState = SBCLIENT::GameStateReset;
-	return true;
-}
-
-NLMISC_COMMAND(sb_login, "go to the login screen", "")
-{
-	if (args.size() != 0) return false;
-	SBCLIENT::NextGameState = SBCLIENT::GameStateLogin;
-	return true;
-}
+	NLMISC_COMMAND(sb_login, "go to the login screen", "")
+	{
+		if (args.size() != 0) return false;
+		SBCLIENT::NextGameState = SBCLIENT::GameStateLogin;
+		return true;
+	}
 
 #if SBCLIENT_DEV_MEMLEAK
 // enable memory leak checks, trick to get _CrtSetBreakAlloc in before main
 #define DEBUG_ALLOC_HOOK
 #if defined(NL_OS_WINDOWS) && defined(NL_DEBUG)
 #if defined(DEBUG_ALLOC_HOOK)
-int debugAllocHook(int allocType, void *userData, size_t size, int blockType, long requestNumber, const unsigned char *filename, int lineNumber);
+	int debugAllocHook(int allocType, void *userData, size_t size, int blockType, long requestNumber, const unsigned char *filename, int lineNumber);
 #endif
-class CEnableCrtDebug
-{
-public:
-	CEnableCrtDebug()
+	class CEnableCrtDebug
 	{
-		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-		_CrtSetBreakAlloc(0);
+	public:
+		CEnableCrtDebug()
+		{
+			_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+			_CrtSetBreakAlloc(0);
 #if defined(DEBUG_ALLOC_HOOK)
-		LastSize = 0;
-		_CrtSetAllocHook(debugAllocHook);
+			LastSize = 0;
+			_CrtSetAllocHook(debugAllocHook);
 #endif
-	}
+		}
 #if defined(DEBUG_ALLOC_HOOK)
-	size_t LastSize;
+		size_t LastSize;
 #endif
-};
-static CEnableCrtDebug _EnableCrtDebug;
+	};
+	static CEnableCrtDebug _EnableCrtDebug;
 #if defined(DEBUG_ALLOC_HOOK)
-int debugAllocHook(int allocType, void *userData, size_t size, int blockType, long requestNumber, const unsigned char *filename, int lineNumber)
-{
-	if (allocType == _HOOK_ALLOC)
+	int debugAllocHook(int allocType, void *userData, size_t size, int blockType, long requestNumber, const unsigned char *filename, int lineNumber)
 	{
-		// if (requestNumber == 14806)
-		//	_CrtSetBreakAlloc(14809);
-		// if (_EnableCrtDebug.LastSize == 4 && size == 40 && requestNumber > 291000 && requestNumber < 292000)
-		//	_CrtDbgBreak();
-		// if (_EnableCrtDebug.LastSize == 36 && size == 112 && requestNumber > 300000)
-		//	_CrtDbgBreak();
-		_EnableCrtDebug.LastSize = size;
+		if (allocType == _HOOK_ALLOC)
+		{
+			// if (requestNumber == 14806)
+			//	_CrtSetBreakAlloc(14809);
+			// if (_EnableCrtDebug.LastSize == 4 && size == 40 && requestNumber > 291000 && requestNumber < 292000)
+			//	_CrtDbgBreak();
+			// if (_EnableCrtDebug.LastSize == 36 && size == 112 && requestNumber > 300000)
+			//	_CrtDbgBreak();
+			_EnableCrtDebug.LastSize = size;
+		}
+		return TRUE;
 	}
-	return TRUE;
-}
 #endif
 #endif
 
@@ -1373,63 +1373,63 @@ int debugAllocHook(int allocType, void *userData, size_t size, int blockType, lo
 #include <nel/3d/particle_system_shape.h>
 #ifdef NL_OS_WINDOWS
 #include <dbghelp.h>
-BOOL CALLBACK EnumerateLoadedModulesProc(PCSTR ModuleName, ULONG ModuleBase, ULONG ModuleSize, PVOID UserContext)
-{
-	// free nel libraries (cannot call nlwarning etc here, so nlGetProcAddress etc does not work)
-	HMODULE hModule = GetModuleHandle(ModuleName);
-	if (GetProcAddress(hModule, NL_MACRO_TO_STR(NLMISC_PURE_LIB_ENTRY_POINT)))
-		FreeLibrary(hModule);
-	return TRUE;
-}
-#endif
-struct yy_buffer_state;
-extern void cf_switch_to_buffer(yy_buffer_state *new_buffer);
-extern yy_buffer_state *cf_create_buffer(FILE *file, int size);
-extern void cf_delete_buffer(yy_buffer_state *b);
-class CCleanupNeL
-{
-public:
-	CCleanupNeL()
-	    : _CfBufferState(NULL)
+	BOOL CALLBACK EnumerateLoadedModulesProc(PCSTR ModuleName, ULONG ModuleBase, ULONG ModuleSize, PVOID UserContext)
 	{
-		_CfBufferState = cf_create_buffer(NULL, 16384);
-		cf_switch_to_buffer(_CfBufferState);
+		// free nel libraries (cannot call nlwarning etc here, so nlGetProcAddress etc does not work)
+		HMODULE hModule = GetModuleHandle(ModuleName);
+		if (GetProcAddress(hModule, NL_MACRO_TO_STR(NLMISC_PURE_LIB_ENTRY_POINT)))
+			FreeLibrary(hModule);
+		return TRUE;
 	}
-	~CCleanupNeL()
-	{
-#ifdef NL_OS_WINDOWS
-		// must unload all other nel modules before killing nel context (or they will crash in static destructors)
-		EnumerateLoadedModules(GetCurrentProcess(), EnumerateLoadedModulesProc, NULL); // todo: linux version
 #endif
-
-		// delete most stuff
-		NL3D::CParticleSystemShape::releaseInstance();
-		NLMISC::CAsyncFileManager::terminate();
-		NL3D::CParticleSystemManager::release();
-		NLMISC::CBigFile::releaseInstance();
-		NLMISC::CStreamedPackageManager::releaseInstance();
-		NLMISC::CClassRegistry::release();
-		delete &NLMISC::CObjectArenaAllocator::getDefaultAllocator();
-		cf_delete_buffer(_CfBufferState);
-		_CfBufferState = NULL;
-
-#ifdef NL_OS_WINDOWS
-		// delete context related stuff (must unload all dynamic nel libs first)
-		NLMISC::destroyDebug();
-		if (NLMISC::INelContext::isContextInitialised())
+	struct yy_buffer_state;
+	extern void cf_switch_to_buffer(yy_buffer_state * new_buffer);
+	extern yy_buffer_state *cf_create_buffer(FILE * file, int size);
+	extern void cf_delete_buffer(yy_buffer_state * b);
+	class CCleanupNeL
+	{
+	public:
+		CCleanupNeL()
+		    : _CfBufferState(NULL)
 		{
-			delete &NLMISC::INelContext::getInstance();
-			delete &NLMISC::CInstanceCounterManager::getInstance();
-			delete &NLMISC::CCommandRegistry::getInstance();
+			_CfBufferState = cf_create_buffer(NULL, 16384);
+			cf_switch_to_buffer(_CfBufferState);
 		}
-		NLMISC::CLog::releaseProcessName();
-#endif
-	}
-
-private:
-	yy_buffer_state *_CfBufferState;
-};
-CCleanupNeL _CleanupNeL;
+		~CCleanupNeL()
+		{
+#ifdef NL_OS_WINDOWS
+			// must unload all other nel modules before killing nel context (or they will crash in static destructors)
+			EnumerateLoadedModules(GetCurrentProcess(), EnumerateLoadedModulesProc, NULL); // todo: linux version
 #endif
 
-/* end of file */
+			// delete most stuff
+			NL3D::CParticleSystemShape::releaseInstance();
+			NLMISC::CAsyncFileManager::terminate();
+			NL3D::CParticleSystemManager::release();
+			NLMISC::CBigFile::releaseInstance();
+			NLMISC::CStreamedPackageManager::releaseInstance();
+			NLMISC::CClassRegistry::release();
+			delete &NLMISC::CObjectArenaAllocator::getDefaultAllocator();
+			cf_delete_buffer(_CfBufferState);
+			_CfBufferState = NULL;
+
+#ifdef NL_OS_WINDOWS
+			// delete context related stuff (must unload all dynamic nel libs first)
+			NLMISC::destroyDebug();
+			if (NLMISC::INelContext::isContextInitialised())
+			{
+				delete &NLMISC::INelContext::getInstance();
+				delete &NLMISC::CInstanceCounterManager::getInstance();
+				delete &NLMISC::CCommandRegistry::getInstance();
+			}
+			NLMISC::CLog::releaseProcessName();
+#endif
+		}
+
+	private:
+		yy_buffer_state *_CfBufferState;
+	};
+	CCleanupNeL _CleanupNeL;
+#endif
+
+	/* end of file */

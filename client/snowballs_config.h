@@ -22,7 +22,6 @@
 // use the default log.log file (not erased on use)
 // #define SBCLIENT_USE_LOG_LOG false
 
-
 // use snowballs log file
 // #define SBCLIENT_USE_LOG 1
 
