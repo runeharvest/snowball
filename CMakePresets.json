@@ -20,7 +20,10 @@
         "CMAKE_CXX_COMPILER": "/usr/bin/g++",
         "WITH_SNOWBALLS_SERVER": "ON",
         "WITH_SNOWBALLS_CLIENT": "ON",
-        "WITH_SNOWBALLS_PACKAGE": "OFF"
+        "WITH_SNOWBALLS_PACKAGE": "OFF",
+        "WITH_LUA52": "ON",
+        "WITH_TOOLS": "OFF",
+        "WITH_NEL_TOOLS": "OFF"
       }
     },
     {
@@ -56,6 +59,30 @@
         "WITH_SNOWBALLS_CLIENT": "OFF",
         "WITH_SNOWBALLS_PACKAGE": "ON"
       }
+    },
+    {
+      "name": "win32-client",
+      "displayName": "Windows Client Only",
+      "description": "Cross-compile Windows client using MinGW",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/win32",
+      "toolchainFile": "${sourceDir}/cmake/toolchain-mingw32.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "WITH_SNOWBALLS_SERVER": "OFF",
+        "WITH_SNOWBALLS_CLIENT": "ON",
+        "WITH_SNOWBALLS_PACKAGE": "OFF",
+        "OPENSSL_ROOT_DIR": "/usr/x86_64-w64-mingw32",
+        "BOOST_ROOT": "/usr/x86_64-w64-mingw32"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "test-preset",
+      "description": "",
+      "displayName": "",
+      "configurePreset": "win32-client"
     }
   ]
 }

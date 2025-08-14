@@ -1,9 +1,18 @@
 
 init:
-	@mkdir -p build/bin/config
+	@mkdir -p build/bin/cfg
 	@mkdir -p build/bin/logs
-	@cp -r base/*.cfg build/bin
-	@echo "Initialized base/*.cfg files into build/bin/"
+	@cp -r base/*.cfg build/bin/cfg/
+	@echo "Initialized"
+
+
+run:
+	cd build/bin && LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:../lib ./client
+
+run-client: run
+
+run-gdb:
+	cd build/bin && LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:../lib gdb -q -ex run ./client
 
 # valid options include: naming_service, login_server, welcome_service, position_service, chat_service, collision_service, frontend_service, snowballs_client
 .PHONY: run-%

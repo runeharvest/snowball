@@ -22,15 +22,12 @@
 // use the default log.log file (not erased on use)
 // #define SBCLIENT_USE_LOG_LOG false
 
-// the config file name
-// #define SBCLIENT_CONFIG_FILE "snowballs_client.cfg"
-// #define SBCLIENT_CONFIG_FILE_DEFAULT "snowballs_client_default.cfg"
 
 // use snowballs log file
 // #define SBCLIENT_USE_LOG 1
 
 // snowballs log file name
-#define SBCLIENT_LOG_FILE "snowballs_client.log"
+#define SBCLIENT_LOG_FILE "logs/client.log"
 
 // clear snowballs log before use
 #define SBCLIENT_ERASE_LOG true
@@ -67,15 +64,5 @@
 #define SBCLIENT_USE_LOG 1
 #endif
 
-// for compatibility with old configuration
-#ifndef SBCLIENT_CONFIG_FILE
-#ifndef SNOWBALLS_CONFIG
-#define SBCLIENT_CONFIG_FILE "snowballs_client.cfg"
-#else
-#define SBCLIENT_CONFIG_FILE SNOWBALLS_CONFIG "snowballs_client.cfg"
-#endif
-#endif
-
-#ifndef SBCLIENT_CONFIG_FILE_DEFAULT
-#define SBCLIENT_CONFIG_FILE_DEFAULT "snowballs_client_default.cfg"
-#endif
+#define SBCLIENT_CONFIG_FILE "cfg/client.cfg"
+#define SBCLIENT_CONFIG_FILE "cfg/client.cfg"

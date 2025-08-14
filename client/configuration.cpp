@@ -66,10 +66,14 @@ bool CConfiguration::init()
 	// set the search paths (kinda important)
 	CConfigFile::CVar *var;
 	var = ConfigFile->getVarPtr("SearchPaths");
+	nlassert(var && "Critical error: Missing config variable 'SearchPaths'");
+	
 	uint varsize = var->size();
 	for (uint i = 0; i < varsize; ++i)
 		CPath::addSearchPath(var->asString(i), true, false);
+
 	var = ConfigFile->getVarPtr("RemapExtensions");
+	nlassert(var && "Critical error: Missing config variable 'RemapExtensions'");
 	varsize = var->size();
 	for (uint i = 0; i < varsize; i += 2)
 		CPath::remapExtension(var->asString(i), var->asString(i + 1), true);

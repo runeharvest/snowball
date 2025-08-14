@@ -1,13 +1,20 @@
-ADD_SUBDIRECTORY(src)
+FILE(GLOB SRC *.cpp *.h)
 
-SET(database "${SNOWBALLS_DATA_FILE}")
-CONFIGURE_FILE(client.cfg.in client.cfg)
+ADD_EXECUTABLE(client WIN32 ${SRC})
 
-INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/client.cfg DESTINATION etc/snowballs COMPONENT snowballsclient)
-INSTALL(DIRECTORY data/
-        DESTINATION share/games/snowballs
-	COMPONENT snowballsdata
-        PATTERN "CVS" EXCLUDE
-        PATTERN ".svn" EXCLUDE
-        PATTERN ".gitkeep" EXCLUDE
-        PATTERN "Makefile*" EXCLUDE)
+TARGET_LINK_LIBRARIES(client
+						nelmisc
+						nelpacs
+						nelnet
+						nel3d)
+
+NL_DEFAULT_PROPS(client "Snowball Client")
+NL_ADD_RUNTIME_FLAGS(client)
+
+# If sound is enabled then add the definitions and link the libraries.
+IF(WITH_SOUND)
+  ADD_DEFINITIONS(-DSBCLIENT_WITH_SOUND)
+  TARGET_LINK_LIBRARIES(client nelsound)
+ENDIF()
+
+INSTALL(TARGETS client RUNTIME DESTINATION ${NL_BIN_PREFIX} COMPONENT client)

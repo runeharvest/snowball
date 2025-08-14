@@ -32,32 +32,6 @@ IF(WITH_SNOWBALLS_SERVER)
 ENDIF()
 
 #-----------------------------------------------------------------------------
-# Downloads and install Hunger into HUNTER_ROOT directory.
-OPTION(HUNTER_ENABLED "Enable Hunter package manager" OFF)
-IF(HUNTER_ENABLED)
-  cmake_minimum_required(VERSION 3.24)
-  INCLUDE("CMakeModules/HunterGate.cmake")
-  HunterGate(
-    URL "https://github.com/cpp-pm/hunter/archive/v0.25.6.tar.gz"
-    SHA1 "69e4a05bd514bb05cb2c5aa02ce8ac420516aaf7"
-    FILEPATH "${CMAKE_CURRENT_LIST_DIR}/CMakeModules/HunterConfig.cmake"
-  )
-
-  # default options for hunterized build
-  SET(WITH_STATIC         ON CACHE BOOL "static" FORCE)
-  SET(WITH_STATIC_DRIVERS ON CACHE BOOL "static drivers" FORCE)
-  SET(WITH_STATIC_CURL    ON CACHE BOOL "static curl" FORCE)
-  SET(WITH_STATIC_LIBXML2 ON CACHE BOOL "static libxml2" FORCE)
-  SET(WITH_STATIC_EXTERNAL ON CACHE BOOL "static external" FORCE)
-  SET(WITH_EXTERNAL       OFF CACHE BOOL "external libs" FORCE)
-
- # Workaround for PCH compilation issue, from curl intsizeof depencency
-  ADD_DEFINITIONS(-D__STDC_LIMIT_MACROS)
-  # TODO: Still applicable after switching to CMake's builtin precompiled header support?
-ENDIF()
-
-
-#-----------------------------------------------------------------------------
 
 INCLUDE(nel)
 INCLUDE(ConfigureChecks)
@@ -389,16 +363,6 @@ FIND_PACKAGE(MySQL)
 ADD_SUBDIRECTORY(shared)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/shared)
 
-
-IF(WIN32)
-  SET(SNOWBALLS_CONFIG_FILE "." CACHE FILEPATH "Snowballs config file location")
-ELSE()
-  SET(SNOWBALLS_CONFIG_FILE "${NL_ETC_PREFIX}/snowballs" CACHE FILEPATH "Snowballs config file location")
-ENDIF()
-SET(SNOWBALLS_DATA_FILE "${NL_SHARE_PREFIX}/games/snowballs" CACHE FILEPATH "Snowballs data file location")
-SET(SNOWBALLS_LOG_FILE "${NL_LOG_PREFIX}/snowballs" CACHE FILEPATH "Snowballs log file location")
-
-
 IF(WITH_SNOWBALLS_CLIENT)
   ADD_SUBDIRECTORY(client)
 ENDIF()
@@ -407,66 +371,6 @@ IF(WITH_SNOWBALLS_SERVER)
   ADD_SUBDIRECTORY(server)
 ENDIF()
 
-IF(WITH_SNOWBALLS_PACKAGE)
-  INCLUDE(CMakePackaging.txt)
-ENDIF()
-
-
-IF(WITH_RYZOM_CLIENT)
-  #ADD_SUBDIRECTORY(data)
-
-
-  INSTALL(FILES client_default.cfg DESTINATION ${RYZOM_ETC_PREFIX})
-
-  IF(WITH_RYZOM_PATCH)
-    IF(APPLE)
-      INSTALL(FILES macosx/upgd_nl.sh DESTINATION ${RYZOM_GAMES_PREFIX})
-    ELSEIF(WIN32)
-      IF(MSVC10)
-        INSTALL(FILES windows/upgd_nl_msvc10.bat DESTINATION ${RYZOM_GAMES_PREFIX} RENAME upgd_nl.bat)
-      ELSEIF(MSVC12)
-        INSTALL(FILES windows/upgd_nl_msvc12.bat DESTINATION ${RYZOM_GAMES_PREFIX} RENAME upgd_nl.bat)
-      ENDIF()
-    ELSE()
-      INSTALL(FILES unix/upgd_nl.sh DESTINATION ${RYZOM_GAMES_PREFIX})
-    ENDIF()
-  ENDIF()
-ENDIF()
-
-#IF(WITH_NELNS)
-#  ADD_SUBDIRECTORY(nelns)
-#ENDIF()
-
-#IF(WITH_SNOWBALLS)
-#  ADD_SUBDIRECTORY(snowballs2)
-#ENDIF()
-
-IF(WITH_TOOLS)
-  ADD_SUBDIRECTORY(tool)
-ENDIF()
-
-IF(WITH_STUDIO)
-  ADD_SUBDIRECTORY(studio)
-ENDIF()
-
-IF(WITH_PERSONAL)
-  ADD_SUBDIRECTORY(personal)
-ENDIF()
-
-# To build the documention, you will have to enable it
-# and then do the equivalent of "make DoxygenDoc".
-IF(BUILD_DOCUMENTATION)
-    IF(DOT)
-        SET(HAVE_DOT YES)
-    ELSE()
-        SET(HAVE_DOT NO)
-    ENDIF()
-    # This processes our Doxyfile.in and substitutes paths to generate
-    # a final Doxyfile
-    CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/doc/Doxyfile.cmake.in ${CMAKE_BINARY_DIR}/doc/Doxyfile)
-
-    ADD_CUSTOM_TARGET(DoxygenDoc ${DOXYGEN} ${CMAKE_BINARY_DIR}/doc/Doxyfile)
-ENDIF()
 
 IF(WITH_NEL_TESTS)
   ENABLE_TESTING()

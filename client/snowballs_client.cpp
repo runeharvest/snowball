@@ -108,7 +108,7 @@ NL3D::UDriver *Driver = NULL; // core
 NL3D::UScene *Scene = NULL; // ingame
 // This variable is used to display text on the screen
 NL3D::UTextContext *TextContext = NULL; // core
-// This class contains all variables that are in the snowballs_client.cfg
+// This class contains all variables that are in the client.cfg
 NLMISC::CConfigFile *ConfigFile = NULL; // core
 NL3D::ULandscape *Landscape = NULL; // ingame
 // This class is used to handle mouse/keyboard input for camera movement
@@ -1225,30 +1225,10 @@ sint main(int argc, char **argv)
 		FILE *f = _tfopen(_T(SBCLIENT_CONFIG_FILE_DEFAULT), _T("r"));
 		if (!f)
 		{
-			f = _tfopen(_T(SBCLIENT_CONFIG_FILE), _T("r"));
-			if (!f)
-			{
-				OutputDebugString("    ********************************    \n");
-				OutputDebugString("    *  CHANGING WORKING DIRECTORY  *    \n");
-				OutputDebugString("    ********************************    \n\n");
-				char cwd[256];
-				_tgetcwd(cwd, 256);
-				tstring workdir(cwd);
-				workdir = "R:\\build\\devw_x86\\bin\\Debug\\";
-				_tchdir(workdir.c_str());
-				f = _tfopen(_T(SBCLIENT_CONFIG_FILE_DEFAULT), _T("r"));
-				if (!f)
-				{
-					f = _tfopen(_T(SBCLIENT_CONFIG_FILE), _T("r"));
-					if (!f)
-					{
-						OutputDebugString("    ********************************    \n");
-						OutputDebugString("    *    DEFAULT CONFIG MISSING    *    \n");
-						OutputDebugString("    ********************************    \n\n");
-						return EXIT_FAILURE;
-					}
-				}
-			}
+		f = _tfopen(_T(SBCLIENT_CONFIG_FILE), _T("r"));
+		if (!f)
+		{
+			return EXIT_FAILURE;
 		}
 		fclose(f);
 	}
