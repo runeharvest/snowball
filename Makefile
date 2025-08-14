@@ -1,9 +1,12 @@
 
 init:
+	@echo "Copying base files to build/bin..."
 	@mkdir -p build/bin/cfg
 	@mkdir -p build/bin/logs
+	@mkdir -p build/bin/data
 	@cp -r base/*.cfg build/bin/cfg/
-	@echo "Initialized"
+	@unzip -qq -o base/data.zip -d build/bin
+	@echo "Done"
 
 
 run:
