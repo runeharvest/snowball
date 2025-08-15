@@ -4,7 +4,13 @@ RuneHarvest's variation of this cleans up and isolates the code outside of the m
 
 # Requirements
 
-- TODO: basically, reopen in dev container (vscode),  `make init` to copy files to build/bin, and run `Cmake: Configure` with Linux, and `Cmake: Build Target` all to build the client and server.
+currently only built for linux
+
+- reopen in dev container (vscode)
+- `make init` to copy config/data to build/bin
+- ctrl+p `CMake: Configure` with Linux
+- ctrl+p `Cmake: Build Target`, select all
+- `make run` to run the game
 
 ## Controls
    
