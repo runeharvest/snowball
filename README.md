@@ -8,8 +8,8 @@ currently only built for linux
 
 - reopen in dev container (vscode)
 - `make init` to copy config/data to build/bin
-- ctrl+p `CMake: Configure` with Linux
-- ctrl+p `Cmake: Build Target`, select all
+- ctrl+shift+p `CMake: Configure` with Linux
+- ctrl+shift+p `Cmake: Build Target`, select all
 - `make run` to run the game
 
 ## Controls
@@ -17,19 +17,19 @@ currently only built for linux
 Use the mouse to look around.
 Use arrow keys to move forward, backward, strafe left and strafe right.
 
-F3: switch on/off the wireframe mode
-F4: clear the chat window
-F5: switch on/off the chat text
-F6: switch on/off the radar
-F7: zoom out the radar
-F8: zoom in the radar
-F9: capture or uncapture the mouse
-F10: switch betweeon online and offline
-F11: reset player position
-F12: take a screenshot
-SHIFT-ESC: quit
-Left Mouse Button: throw a snowball
-Type text followed by ENTER to broadcast messages
+- F3: switch on/off the wireframe mode
+- F4: clear the chat window
+- F5: switch on/off the chat text
+- F6: switch on/off the radar
+- F7: zoom out the radar
+- F8: zoom in the radar
+- F9: capture or uncapture the mouse
+- F10: switch betweeon online and offline
+- F11: reset player position
+- F12: take a screenshot
+- SHIFT-ESC: quit
+- Left Mouse Button: throw a snowball
+- Type text followed by ENTER to broadcast messages
 
 # Copyright
 
