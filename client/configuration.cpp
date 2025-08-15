@@ -61,7 +61,7 @@ bool CConfiguration::init()
 	nlassert(!ConfigFile);
 	ConfigFile = new CConfigFile();
 	nlassert(ConfigFile);
-	ConfigFile->load(SBCLIENT_CONFIG_FILE);
+	ConfigFile->load("cfg/client.cfg");
 
 	// set the search paths (kinda important)
 	CConfigFile::CVar *var;

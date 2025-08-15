@@ -1228,16 +1228,13 @@ sint main(int argc, char **argv)
 		OutputDebugString("    ********************************    \n");
 		OutputDebugString("    *        DEVELOPER MODE        *    \n");
 		OutputDebugString("    ********************************    \n\n");
-		FILE *f = _tfopen(_T(SBCLIENT_CONFIG_FILE_DEFAULT), _T("r"));
+
+		File *f = _tfopen(_T("cfg/client.cfg"), _T("r"));
 		if (!f)
 		{
-			f = _tfopen(_T(SBCLIENT_CONFIG_FILE), _T("r"));
-			if (!f)
-			{
-				return EXIT_FAILURE;
-			}
-			fclose(f);
+			return EXIT_FAILURE;
 		}
+		fclose(f);
 #endif
 
 		// go nel!
@@ -1285,7 +1282,7 @@ sint main(int argc, char **argv)
 	}
 
 	// Command to quit the client
-	NLMISC_COMMAND(sb_quit, "quit the client", "")
+	NLMISC_COMMAND(quit, "quit the client", "")
 	{
 		// check args, if there s not the right number of parameter, return bad
 		if (args.size() != 0) return false;

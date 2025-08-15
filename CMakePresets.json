@@ -23,7 +23,8 @@
         "WITH_SNOWBALLS_PACKAGE": "OFF",
         "WITH_LUA52": "ON",
         "WITH_TOOLS": "OFF",
-        "WITH_NEL_TOOLS": "OFF"
+        "WITH_NEL_TOOLS": "OFF",
+        "WITH_SOUND": "OFF"
       }
     },
     {

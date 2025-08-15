@@ -62,6 +62,3 @@
 #if !defined(SBCLIENT_USE_LOG)
 #define SBCLIENT_USE_LOG 1
 #endif
-
-#define SBCLIENT_CONFIG_FILE "cfg/client.cfg"
-#define SBCLIENT_CONFIG_FILE "cfg/client.cfg"
