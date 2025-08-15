@@ -1021,15 +1021,21 @@ void initLoadingState()
 
 void releaseLoadingState()
 {
-	LogoScene->deleteInstance(Logo);
+	if (LogoScene != NULL)
+	{
+		LogoScene->deleteInstance(Logo);
+	}
 	Logo = NULL;
-	Driver->deleteScene(LogoScene);
-	LogoScene = NULL;
 
-	Driver->deleteTextureFile(NelLogo);
+	if (Driver != NULL)
+	{
+		Driver->deleteScene(LogoScene);
+		Driver->deleteTextureFile(NelLogo);
+		Driver->deleteTextureFile(SnowballsBackground);
+	}
+
+	LogoScene = NULL;
 	NelLogo = NULL;
-	// Driver->deleteTextureFile(NevraxLogo); NevraxLogo = NULL;
-	Driver->deleteTextureFile(SnowballsBackground);
 	SnowballsBackground = NULL;
 }
 
