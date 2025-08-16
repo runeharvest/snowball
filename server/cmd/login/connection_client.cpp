@@ -76,225 +76,186 @@ void string_escape(string &str)
 
 static void cbClientVerifyLoginPassword(CMessage &msgin, TSockId from, CCallbackNetBase &netbase)
 {
-	//
-	// S03: check the validity of the client login/password and send "VLP" message to client
-	//
-
-	// reason is empty if everything goes right or contains the reason of the failure
 	string reason;
 	sint32 uid = -1;
 	ucstring login;
-	string cpassword, application;
+	string cpassword;
+	string application;
 	msgin.serial(login);
 	msgin.serial(cpassword);
 	msgin.serial(application);
 
-	breakable
+	auto user = login_service->UserByLogin(login.toUtf8());
+	if (!user)
 	{
-		CMysqlResult result;
-		MYSQL_ROW row;
-		sint32 nbrow;
-		// const CInetAddress &ia = netbase.hostAddress (from);
-	retry:
-		// sql: userbyLogin
-		reason = sqlQuery("select * from user where Login='" + login.toUtf8() + "'", nbrow, row, result);
-		if (!reason.empty()) break;
-
-		if (nbrow == 0)
+		if (IService::getInstance()->ConfigFile.getVar("AcceptUnknownUsers").asInt() != 1)
 		{
-			if (IService::getInstance()->ConfigFile.getVar("AcceptUnknownUsers").asInt() == 1)
-			{
-				// we accept new users, add it
-				// sql: userCreate
-				string query = "insert into user (Login, Password) values ('" + login.toUtf8() + "', '" + cpassword + "')";
-				reason = sqlQuery(query, nbrow, row, result);
-				if (!reason.empty()) break;
-				nlinfo("The user %s was inserted in the database for the application '%s'!", login.toUtf8().c_str(), application.c_str());
-				goto retry;
-			}
-			else
-			{
-				reason = toString("Login '%s' doesn't exist", login.toUtf8().c_str());
-				break;
-			}
+			reason = toString("Login '%s' doesn't exist", login.toUtf8().c_str());
+			CMessage msgout("VLP");
+			msgout.serial(reason);
+			netbase.send(msgout, from);
+			return;
 		}
 
-		if (nbrow != 1)
+		user->Password = cpassword;
+		user = login_service->UserCreate(*user);
+		if (!user)
 		{
-			reason = toString("Too much login '%s' exists", login.toUtf8().c_str());
-			break;
+			reason = "Failed to create user";
+			CMessage msgout("VLP");
+			msgout.serial(reason);
+			netbase.send(msgout, from);
+			return;
 		}
+		nlinfo("The user %s was created for the application '%s'!", login.toUtf8().c_str(), application.c_str());
+	}
 
-		// now the user is on the database
-
-		NLMISC::fromString(row[0], uid);
-
-		if (cpassword != row[2])
-		{
-			reason = toString("Bad password");
-			break;
-		}
-
-		if (row[4] != string("Offline"))
-		{
-			// 2 players are trying to play with the same id, disconnect all
-			// reason = sqlQuery(string("update user set state='Offline', ShardId=-1 where UId=")+uid);
-			// if(!reason.empty()) break;
-
-			// send a message to the already connected player to disconnect
-			CMessage msgout("DC");
-			msgout.serial(uid);
-			CUnifiedNetwork::getInstance()->send("WS", msgout);
-
-			reason = "You are already connected.";
-			break;
-		}
-
-		CLoginCookie c;
-		c.set((uint32)(uintptr_t)from, rand(), uid);
-
-		// sql: userUpdate
-		reason = sqlQuery("update user set state='Authorized', Cookie='" + c.setToString() + "' where UId=" + NLMISC::toString(uid));
-		if (!reason.empty()) break;
-
-		// sql: shardByClientApplication
-		reason = sqlQuery("select * from shard where Online>0 and ClientApplication='" + application + "'", nbrow, row, result);
-		if (!reason.empty()) break;
-
-		// Send success message
+	if (cpassword != user->Password)
+	{
+		reason = toString("Bad password");
 		CMessage msgout("VLP");
 		msgout.serial(reason);
-		msgout.serial(nbrow);
-
-		// send address and name of all online shards
-		while (row != 0)
-		{
-			// serial the name of the shard
-			ucstring shardname;
-			shardname.fromUtf8(row[3]);
-			uint8 nbplayers = atoi(row[2]);
-			uint32 sid = atoi(row[0]);
-			msgout.serial(shardname, nbplayers, sid);
-			row = mysql_fetch_row(result);
-		}
 		netbase.send(msgout, from);
-		netbase.authorizeOnly("CS", from);
-
 		return;
 	}
 
-	// Manage error
+	if (user->State != UserState::Offline)
+	{
+		// disconnect everyone
+		CMessage msgout("DC");
+		msgout.serial(uid);
+		CUnifiedNetwork::getInstance()->send("WS", msgout);
+
+		reason = toString("User '%s' is already connected", login.toUtf8().c_str());
+		CMessage vplMsgout("VLP");
+		vplMsgout.serial(reason);
+		netbase.send(vplMsgout, from);
+		return;
+	}
+
+	uid = user->UId;
+
+	CLoginCookie c;
+	c.set((uint32)(uintptr_t)from, rand(), uid);
+
+	user->Cookie = c.setToString();
+	user->State = UserState::Online;
+
+	if (!login_service->UserUpdate(*user))
+	{
+		reason = "Failed to update user cookie";
+		CMessage msgout("VLP");
+		msgout.serial(reason);
+		netbase.send(msgout, from);
+		return;
+	}
+
+	auto shards = login_service->ShardsByClientApplication(application);
+	if (shards.empty())
+	{
+		reason = toString("No shard available for the application '%s'", application.c_str());
+		CMessage msgout("VLP");
+		msgout.serial(reason);
+		netbase.send(msgout, from);
+		return;
+	}
+
+	// Send success message
 	CMessage msgout("VLP");
-	if (reason.empty()) reason = "Unknown error";
 	msgout.serial(reason);
+	msgout.serial(uid);
+
+	for (const auto &shard : shards)
+	{
+		ucstring shardname;
+		shardname.fromUtf8(shard->Name);
+		msgout.serial(shardname, shard->PlayerCount, shard->ShardID);
+	}
+
 	netbase.send(msgout, from);
-	// FIX: On GNU/Linux, when we disconnect now, sometime the other side doesn't receive the message sent just before.
-	//      So it is the other side to disconnect
-	//		netbase.disconnect (from);
+	netbase.authorizeOnly("CS", from);
+
+	return;
 }
 
 static void cbClientChooseShard(CMessage &msgin, TSockId from, CCallbackNetBase &netbase)
 {
-	//
-	// S06: receive "CS" message from client
-	//
-
 	string reason;
 
-	breakable
+	sint32 shardid;
+	msgin.serial(shardid);
+
+	auto users = login_service->UsersByState(UserState::Online);
+	if (users.empty())
 	{
-		CMysqlResult result;
-		MYSQL_ROW row;
-		sint32 nbrow;
-		// sql: userByState
-		reason = sqlQuery("select UId, Cookie, Privilege, ExtendedPrivilege from user where State='Authorized'", nbrow, row, result);
-		if (!reason.empty()) break;
-
-		if (nbrow == 0)
-		{
-			reason = "You are not authorized to select a shard";
-			break;
-		}
-
-		bool ok = false;
-		while (row != 0)
-		{
-			CLoginCookie lc;
-			lc.setFromString(row[1]);
-			if (lc.getUserAddr() == (uint32)(uintptr_t)from)
-			{
-				ok = true;
-				break;
-			}
-			row = mysql_fetch_row(result);
-		}
-
-		if (!ok)
-		{
-			reason = "You are not authorized to select a shard";
-			break;
-		}
-
-		string uid = row[0];
-		string cookie = row[1];
-		string priv = row[2];
-		string expriv = row[3];
-
-		// it is ok, so we find the wanted shard
-		sint32 shardid;
-		msgin.serial(shardid);
-
-		// sql: shardByShardID
-		reason = sqlQuery("select * from shard where ShardId=" + toString(shardid), nbrow, row, result);
-		if (!reason.empty()) break;
-
-		if (nbrow == 0)
-		{
-			reason = "This shard is not available";
-			break;
-		}
-
-		sint32 s = findShard(shardid);
-		if (s == -1)
-		{
-			reason = "Cannot find the shard internal id";
-			break;
-		}
-		TServiceId sid = Shards[s].SId;
-
-		// sql: userUpdate
-		reason = sqlQuery("update user set State='Waiting', ShardId=" + toString(shardid) + " where UId=" + uid);
-		if (!reason.empty()) break;
-
-		// sql: userByUID
-		reason = sqlQuery("select Login from user where UId=" + uid, nbrow, row, result);
-		if (!reason.empty()) break;
-
-		if (nbrow == 0)
-		{
-			reason = "Cannot retrieve the username";
-			break;
-		}
-
-		ucstring name;
-		name.fromUtf8(row[0]);
-
-		CLoginCookie lc;
-		lc.setFromString(cookie);
-		CMessage msgout("CS");
-		msgout.serial(lc, name, priv, expriv);
-		CUnifiedNetwork::getInstance()->send(sid, msgout);
-
+		reason = "No user found";
+		CMessage msgout("SCS");
+		msgout.serial(reason);
+		netbase.send(msgout, from);
 		return;
 	}
 
-	// Manage error
-	CMessage msgout("SCS");
-	msgout.serial(reason);
-	netbase.send(msgout, from);
-	// FIX: On GNU/Linux, when we disconnect now, sometime the other side doesn't receive the message sent just before.
-	//      So it's the other side to disconnect
-	//			netbase.disconnect (from);
+	std::shared_ptr<User> user;
+
+	for (const auto &u : users)
+	{
+		if (u->Cookie.empty())
+		{
+			continue;
+		}
+
+		CLoginCookie lc;
+		lc.setFromString(u->Cookie);
+		if (lc.getUserAddr() != (uint32)(uintptr_t)from)
+		{
+			continue;
+		}
+
+		user = u;
+		break;
+	}
+	if (!user)
+	{
+		reason = "You are not authorized to select a shard";
+		CMessage msgout("SCS");
+		msgout.serial(reason);
+		netbase.send(msgout, from);
+		return;
+	}
+
+	auto shard = login_service->ShardByShardID(shardid);
+	if (!shard)
+	{
+		reason = "This shard is not available";
+		CMessage msgout("SCS");
+		msgout.serial(reason);
+		netbase.send(msgout, from);
+		return;
+	}
+
+	user->State = UserState::Waiting;
+	user->ShardID = shard->ShardID;
+
+	if (!login_service->UserUpdate(*user))
+	{
+		reason = "Failed to update user state";
+		CMessage msgout("SCS");
+		msgout.serial(reason);
+		netbase.send(msgout, from);
+		return;
+	}
+
+	ucstring loginName;
+	loginName.fromUtf8(user->Login);
+	CLoginCookie lc;
+	lc.setFromString(user->Cookie);
+	CMessage msgout("CS");
+	ucstring shardName, userPrivilege, userExtendedPrivilege;
+	shardName.fromUtf8(shard->Name);
+	userPrivilege.fromUtf8(user->Privilege);
+	userExtendedPrivilege.fromUtf8(user->ExtendedPrivilege);
+	msgout.serial(lc, shardName, userPrivilege, userExtendedPrivilege);
+	CUnifiedNetwork::getInstance()->send(TServiceId(shard->ShardID), msgout);
 }
 
 static void cbClientConnection(TSockId from, void *arg)

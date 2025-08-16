@@ -5,6 +5,7 @@
 #include <vector>
 #include <memory>
 #include <string>
+#include <mutex>
 
 // In-memory ShardDB
 class ShardMemory final : public ShardDB
@@ -21,25 +22,10 @@ public:
 	bool ShardUpdate(const Shard &s) override;
 	std::vector<std::shared_ptr<Shard>> ShardsByClientApplication(const std::string &clientApp) override;
 
-	// Helpers
-	int32_t AssignShardID(const std::shared_ptr<Shard> &shard); // returns assigned id
-	void BindShardID(int32_t shardId, const std::shared_ptr<Shard> &shard);
-	void BindWSAddr(int32_t shardId, const std::string &wsAddr);
-	void BindClientApplication(int32_t shardId, const std::string &clientApp);
-	void UnbindWSAddr(const std::string &wsAddr);
-	void UnbindClientApplication(const std::string &clientApp);
-	void Clear();
-
 private:
-	int32_t nextId_ = 1;
-
-	// Primary storage
+	int32_t nextId_ = 0;
 	std::vector<std::shared_ptr<Shard>> all_;
-	std::unordered_map<int32_t, std::shared_ptr<Shard>> byId_;
-
-	// Secondary indexes maintained via helpers
-	std::unordered_map<std::string, std::vector<int32_t>> wsAddrToIds_;
-	std::unordered_map<std::string, std::vector<int32_t>> clientAppToIds_;
+	mutable std::mutex mutex_;
 
 	static std::shared_ptr<Shard> CloneToPtr(const Shard &s);
 };

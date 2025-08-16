@@ -302,18 +302,19 @@ public:
 		auto shardMemory = ShardMemory();
 		auto userMemory = UserMemory();
 
-		auto loginService = new LoginService(shardMemory, userMemory);
+		login_service = new LoginService(shardMemory, userMemory);
 
 		Shard shard;
 		shard.Account = "Test";
-		loginService->ShardCreate(shard);
-		auto newShard = loginService->ShardByShardID(0);
+		login_service->ShardCreate(shard);
+		nlinfo("shard created with id %d", shard.ShardID);
+		auto newShard = login_service->ShardByShardID(0);
 		if (newShard == nullptr)
 		{
 			nlerror("new shard not found");
 			return;
 		}
-		nlinfo("shard account found: %s", newShard->Account);
+		nlinfo("shard account found: %s", newShard->Account.c_str());
 
 		Output = new CLog;
 
@@ -328,7 +329,7 @@ public:
 		if (WindowDisplayer) Output->addDisplayer(WindowDisplayer);
 
 		// Initialize the database access
-		sqlInit();
+		// sqlInit();
 
 		connectionWSInit();
 

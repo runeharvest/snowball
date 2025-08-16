@@ -21,9 +21,9 @@ std::vector<std::shared_ptr<User>> LoginService::UsersByState(UserState state)
 	return userDB_.UsersByState(state);
 }
 
-std::vector<std::shared_ptr<User>> LoginService::UsersByCookie(const std::string &cookie)
+std::shared_ptr<User> LoginService::UserByCookie(const std::string &cookie)
 {
-	return userDB_.UsersByCookie(cookie);
+	return userDB_.UserByCookie(cookie);
 }
 
 std::shared_ptr<User> LoginService::UserCreate(const User &u)

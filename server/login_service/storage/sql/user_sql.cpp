@@ -39,18 +39,9 @@ std::vector<std::shared_ptr<User>> UserSql::UsersByState(UserState state)
 	return out;
 }
 
-std::vector<std::shared_ptr<User>> UserSql::UsersByCookie(const std::string &cookie)
+std::shared_ptr<User> UserSql::UserByCookie(const std::string &cookie)
 {
-	std::vector<std::shared_ptr<User>> out;
-	auto it = cookieToIds_.find(cookie);
-	if (it == cookieToIds_.end()) return out;
-	out.reserve(it->second.size());
-	for (auto uid : it->second)
-	{
-		auto fit = byId_.find(uid);
-		if (fit != byId_.end()) out.emplace_back(fit->second);
-	}
-	return out;
+	return nullptr;
 }
 
 std::shared_ptr<User> UserSql::UserCreate(const User &uIn)

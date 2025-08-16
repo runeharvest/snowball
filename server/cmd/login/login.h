@@ -39,12 +39,14 @@ typedef unsigned long ulong;
 #include "nel/misc/displayer.h"
 #include "nel/misc/log.h"
 
+#include "login_service.h"
 #include "nel/net/service.h"
 
 using namespace std;
 using namespace NLMISC;
 using namespace NLNET;
 
+static LoginService *login_service;
 // Structures
 
 struct CFrontEnd

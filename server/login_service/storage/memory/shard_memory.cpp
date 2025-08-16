@@ -1,5 +1,6 @@
 #include "shard_memory.h"
 #include <algorithm>
+#include <mutex>
 
 std::shared_ptr<Shard> ShardMemory::CloneToPtr(const Shard &s)
 {
@@ -8,32 +9,54 @@ std::shared_ptr<Shard> ShardMemory::CloneToPtr(const Shard &s)
 
 std::vector<std::shared_ptr<Shard>> ShardMemory::Shards()
 {
+	std::lock_guard<std::mutex> lock(mutex_);
 	return all_; // copy of vector of shared_ptrs
 }
 
 std::shared_ptr<Shard> ShardMemory::ShardByShardID(int32_t shardId)
 {
-	auto it = byId_.find(shardId);
-	return (it == byId_.end()) ? nullptr : it->second;
+	std::lock_guard<std::mutex> lock(mutex_);
+	for (const auto &shardPtr : all_)
+	{
+		if (!shardPtr)
+		{
+			continue;
+		}
+		if (shardPtr->ShardID != shardId)
+		{
+			continue;
+		}
+
+		return shardPtr;
+	}
+	return nullptr;
 }
 
 std::vector<std::shared_ptr<Shard>> ShardMemory::ShardsByWSAddr(const std::string &wsAddr)
 {
+	std::lock_guard<std::mutex> lock(mutex_);
 	std::vector<std::shared_ptr<Shard>> out;
-	auto it = wsAddrToIds_.find(wsAddr);
-	if (it == wsAddrToIds_.end()) return out;
-	out.reserve(it->second.size());
-	for (auto id : it->second)
+	for (const auto &shardPtr : all_)
 	{
-		auto fit = byId_.find(id);
-		if (fit != byId_.end()) out.emplace_back(fit->second);
+		if (shardPtr && shardPtr->WSAddr == wsAddr)
+		{
+			out.emplace_back(shardPtr);
+		}
 	}
 	return out;
 }
 
 std::shared_ptr<Shard> ShardMemory::ShardCreate(const Shard &s)
 {
-	auto ptr = CloneToPtr(s);
+	std::lock_guard<std::mutex> lock(mutex_);
+	Shard sCopy = s;
+	if (sCopy.ShardID == 0)
+	{
+		sCopy.ShardID = nextId_;
+		nextId_++;
+	}
+
+	auto ptr = CloneToPtr(sCopy);
 	all_.push_back(ptr);
 	// No id bound by default. Caller may BindShardID or AssignShardID.
 	return ptr;
@@ -41,7 +64,7 @@ std::shared_ptr<Shard> ShardMemory::ShardCreate(const Shard &s)
 
 bool ShardMemory::ShardUpdate(const Shard &s)
 {
-	// Update by identity: caller should pass the same object previously returned by ShardCreate (*ptr).
+	std::lock_guard<std::mutex> lock(mutex_);
 	for (auto &p : all_)
 	{
 		if (p.get() == &s)
@@ -50,73 +73,20 @@ bool ShardMemory::ShardUpdate(const Shard &s)
 			return true;
 		}
 	}
-	// If not found by identity, try any bound id that points to this address.
-	for (auto &kv : byId_)
-	{
-		if (kv.second && kv.second.get() == &s)
-		{
-			*(kv.second) = s;
-			return true;
-		}
-	}
+
 	return false;
 }
 
 std::vector<std::shared_ptr<Shard>> ShardMemory::ShardsByClientApplication(const std::string &clientApp)
 {
+	std::lock_guard<std::mutex> lock(mutex_);
 	std::vector<std::shared_ptr<Shard>> out;
-	auto it = clientAppToIds_.find(clientApp);
-	if (it == clientAppToIds_.end()) return out;
-	out.reserve(it->second.size());
-	for (auto id : it->second)
+	for (const auto &shardPtr : all_)
 	{
-		auto fit = byId_.find(id);
-		if (fit != byId_.end()) out.emplace_back(fit->second);
+		if (shardPtr && shardPtr->ClientApplication == clientApp)
+		{
+			out.emplace_back(shardPtr);
+		}
 	}
 	return out;
-}
-
-int32_t ShardMemory::AssignShardID(const std::shared_ptr<Shard> &shard)
-{
-	if (!shard) return 0;
-	while (byId_.count(nextId_)) ++nextId_;
-	byId_[nextId_] = shard;
-	return nextId_++;
-}
-
-void ShardMemory::BindShardID(int32_t shardId, const std::shared_ptr<Shard> &shard)
-{
-	if (!shard) return;
-	byId_[shardId] = shard;
-}
-
-void ShardMemory::BindWSAddr(int32_t shardId, const std::string &wsAddr)
-{
-	auto &v = wsAddrToIds_[wsAddr];
-	if (std::find(v.begin(), v.end(), shardId) == v.end()) v.push_back(shardId);
-}
-
-void ShardMemory::BindClientApplication(int32_t shardId, const std::string &clientApp)
-{
-	auto &v = clientAppToIds_[clientApp];
-	if (std::find(v.begin(), v.end(), shardId) == v.end()) v.push_back(shardId);
-}
-
-void ShardMemory::UnbindWSAddr(const std::string &wsAddr)
-{
-	wsAddrToIds_.erase(wsAddr);
-}
-
-void ShardMemory::UnbindClientApplication(const std::string &clientApp)
-{
-	clientAppToIds_.erase(clientApp);
-}
-
-void ShardMemory::Clear()
-{
-	nextId_ = 1;
-	all_.clear();
-	byId_.clear();
-	wsAddrToIds_.clear();
-	clientAppToIds_.clear();
 }

@@ -5,10 +5,13 @@
 
 struct Shard
 {
+	int32_t ShardID = 0; // Unique identifier for the shard
 	int32_t Level = 0;
 	int32_t CurrentFunds = 0;
 	int32_t ValidIdBilling = 0;
 	int32_t GMId = 0;
+	int32_t PlayerCount = 0;
+	std::string Name;
 	std::string IdBilling;
 	std::string Community;
 	std::string Account;
@@ -26,4 +29,6 @@ struct Shard
 	uint8_t Newsletter = 0;
 	uint8_t ChoiceSubLength = 0;
 	uint8_t PBC = 0;
+	std::string WSAddr;
+	std::string ClientApplication;
 };

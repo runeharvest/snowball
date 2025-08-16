@@ -89,16 +89,20 @@
     "cmake.useCMakePresets": "always",
     "cmake.enableAutomaticKitScan": false,
     "cmake.cmakePath": "/usr/local/bin/cmake",
-    "[cpp]": {
-        "editor.formatOnSave": true,
-        "editor.defaultFormatter": "xaver.clang-format"
-    },
-    "[c]": {
-        "editor.formatOnSave": true,
-        "editor.defaultFormatter": "xaver.clang-format"
-    },
-    "[h]": {
-        "editor.formatOnSave": true,
-        "editor.defaultFormatter": "xaver.clang-format"
-    }
+    // "[cpp]": {
+    //     "editor.formatOnSave": true,
+    //     "editor.defaultFormatter": "xaver.clang-format"
+    // },
+    // "[c]": {
+    //     "editor.formatOnSave": true,
+    //     "editor.defaultFormatter": "xaver.clang-format"
+    // },
+    // "[h]": {
+    //     "editor.formatOnSave": true,
+    //     "editor.defaultFormatter": "xaver.clang-format"
+    // },
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "xaver.clang-format",
+    //"C_Cpp.clang_format_style": "{ BasedOnStyle: Google, UseTab: ForIndentation, IndentWidth: 4, TabWidth: 4, IncludeBlocks: Preserve, ColumnLimit: 0, SortIncludes: false}",
+    "terminal.integrated.tabs.title": "${sequence}"
 }

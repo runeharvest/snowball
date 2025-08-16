@@ -22,7 +22,8 @@ gdb:
 run-%:
 	@mkdir -p build/bin/logs
 	@mkdir -p build/bin/config
-	@cd build/bin && ./$* || exit 1
+	@printf '\033]2;$*\007'
+	@cd build/bin && exec ./$*
 
 gdb-%:
 	@mkdir -p build/bin/logs

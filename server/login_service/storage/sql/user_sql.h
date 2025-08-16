@@ -16,7 +16,7 @@ public:
 	std::shared_ptr<User> UserByLogin(const std::string &login) override;
 	std::shared_ptr<User> UserByUID(int32_t uid) override;
 	std::vector<std::shared_ptr<User>> UsersByState(UserState state) override;
-	std::vector<std::shared_ptr<User>> UsersByCookie(const std::string &cookie) override;
+	std::shared_ptr<User> UserByCookie(const std::string &cookie) override;
 	std::shared_ptr<User> UserCreate(const User &u) override;
 	bool UserUpdate(const User &u) override;
 
