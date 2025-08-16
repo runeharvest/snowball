@@ -258,7 +258,13 @@ static void cbClientDisconnection(TSockId from, void *arg)
 
 	nldebug("new client disconnection: %s", ia.asString().c_str());
 
-	auto users = login_service->Users();
+	auto usersResp = login_service->Users();
+	if (!usersResp)
+	{
+		nlwarning("users: %s", usersResp.error());
+		return;
+	}
+	auto users = usersResp.value();
 	if (users.empty())
 	{
 		return;

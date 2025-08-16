@@ -1,5 +1,6 @@
 #include "user_sql.h"
 #include <algorithm>
+#include <expected>
 
 // static
 std::shared_ptr<User> UserSql::CloneToPtr(const User &u)
@@ -7,7 +8,7 @@ std::shared_ptr<User> UserSql::CloneToPtr(const User &u)
 	return std::make_shared<User>(u);
 }
 
-std::vector<std::shared_ptr<User>> UserSql::Users()
+std::expected<std::vector<std::shared_ptr<User>>, std::string>  UserSql::Users()
 {
 	std::vector<std::shared_ptr<User>> out;
 	out.reserve(byId_.size());

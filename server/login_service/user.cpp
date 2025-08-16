@@ -1,6 +1,7 @@
 #include "login_service.h"
+#include <expected>
 
-std::vector<std::shared_ptr<User>> LoginService::Users()
+std::expected<std::vector<std::shared_ptr<User>>, std::string> LoginService::Users()
 {
 	return userDB_.Users();
 }

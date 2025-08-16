@@ -1,4 +1,5 @@
 #pragma once
+#include <expected>
 #include "user.h"
 #include "user_db.h"
 #include "shard.h"
@@ -17,7 +18,7 @@ public:
 	virtual ~LoginService() = default;
 
 	// Users
-	virtual std::vector<std::shared_ptr<User>> Users();
+	virtual std::expected<std::vector<std::shared_ptr<User>>, std::string> Users();
 	virtual std::shared_ptr<User> UserByLogin(const std::string &login);
 	virtual std::shared_ptr<User> UserByUID(int32_t uid);
 	virtual std::vector<std::shared_ptr<User>> UsersByState(UserState state);

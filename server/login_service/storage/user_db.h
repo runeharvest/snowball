@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <expected>
 
 // ---------- DB "interfaces" (pure-virtual structs) ----------
 
@@ -11,7 +12,7 @@ struct UserDB
 	virtual ~UserDB() = default;
 
 	// Mirrors LoginService user-facing methods
-	virtual std::vector<std::shared_ptr<User>> Users() = 0;
+	virtual std::expected<std::vector<std::shared_ptr<User>>, std::string>  Users() = 0;
 	virtual std::shared_ptr<User> UserByLogin(const std::string &login) = 0;
 	virtual std::shared_ptr<User> UserByUID(int32_t uid) = 0;
 	virtual std::vector<std::shared_ptr<User>> UsersByState(UserState state) = 0;

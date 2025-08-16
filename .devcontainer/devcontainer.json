@@ -1,8 +1,10 @@
 {
   "name": "snowball",
-  "build": {
-    "dockerfile": "Dockerfile"
-  },
+  // image is hosted at https://github.com/runeharvest/docker
+  //"image": "docker.com/runeharvest/vscode-dev:latest",
+   "build": {    
+     "dockerfile": "Dockerfile"
+   },
   "containerUser": "vscode",
   "customizations": {
     "vscode": {

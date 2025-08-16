@@ -17,6 +17,8 @@ IF(WITH_SOUND)
   TARGET_LINK_LIBRARIES(client nelsound)
 ENDIF()
 
+TARGET_LINK_OPTIONS(client PRIVATE -static-libstdc++ -static-libgcc)
+
 SET_TARGET_PROPERTIES(client PROPERTIES
   INSTALL_RPATH "$ORIGIN/lib:$ORIGIN/../lib"
   BUILD_RPATH   "$ORIGIN/lib:$ORIGIN/../lib")

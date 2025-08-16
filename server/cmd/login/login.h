@@ -30,8 +30,6 @@
 typedef unsigned long ulong;
 #endif
 
-#include <mysql.h>
-
 #include "nel/misc/types_nl.h"
 
 #include "nel/misc/debug.h"

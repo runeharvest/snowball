@@ -3,6 +3,7 @@
 #include "user_db.h"
 #include <optional>
 #include <unordered_map>
+#include <expected>
 
 // ---------- In-memory UserDB implementation ----------
 class UserMemory final : public UserDB
@@ -12,7 +13,7 @@ public:
 	~UserMemory() override = default;
 
 	// UserDB interface
-	std::vector<std::shared_ptr<User>> Users() override;
+	std::expected<std::vector<std::shared_ptr<User>>, std::string>  Users() override;
 	std::shared_ptr<User> UserByLogin(const std::string &login) override;
 	std::shared_ptr<User> UserByUID(int32_t uid) override;
 	std::vector<std::shared_ptr<User>> UsersByState(UserState state) override;

@@ -439,7 +439,13 @@ NLMISC_COMMAND(registeredUsers, "displays the list of all registered users", "")
 {
 	if (args.size() != 0) return false;
 
-	auto users = login_service->Users();
+	auto usersResp = login_service->Users();
+	if (!usersResp)
+	{
+		log.displayNL("Users failed: %s", usersResp.error());
+		return true;
+	}
+	auto users = usersResp.value();
 	if (users.empty())
 	{
 		log.displayNL("No registered users found in the database");

@@ -1,12 +1,13 @@
 #include "user_memory.h"
 #include <algorithm>
+#include <expected>
 
 std::shared_ptr<User> UserMemory::CloneToPtr(const User &u)
 {
 	return std::make_shared<User>(u);
 }
 
-std::vector<std::shared_ptr<User>> UserMemory::Users()
+std::expected<std::vector<std::shared_ptr<User>>, std::string>  UserMemory::Users()
 {
 	std::vector<std::shared_ptr<User>> out;
 	out.reserve(all_.size());

@@ -6,6 +6,10 @@
 
 CMAKE_MINIMUM_REQUIRED(VERSION 3.22)
 
+SET(CMAKE_CXX_STANDARD 23)
+SET(CMAKE_CXX_STANDARD_REQUIRED ON)
+SET(CMAKE_CXX_EXTENSIONS OFF)
+
 #-----------------------------------------------------------------------------
 # Load some macros.
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/CMakeModules")

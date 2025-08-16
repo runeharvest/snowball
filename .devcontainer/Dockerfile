@@ -1,5 +1,4 @@
-# FROM ubuntu:22.04
-FROM mcr.microsoft.com/devcontainers/base:ubuntu-22.04
+FROM mcr.microsoft.com/devcontainers/base:ubuntu-20.04
 RUN apt update; \
     DEBIAN_FRONTEND=noninteractive \
     apt install --yes \
@@ -36,15 +35,14 @@ RUN apt update; \
         qttools5-dev \
         qttools5-dev-tools \
         libqtpropertybrowser-dev \
-        qt6-base-dev \
-        qt6-l10n-tools \
-        qt6-tools-dev \
-        qt6-tools-dev-tools \
-        clang-format \
         mingw-w64 \
         mingw-w64-tools \
-        libz-mingw-w64-dev
-
+        libz-mingw-w64-dev \
+        software-properties-common \
+        pkg-config; \
+        add-apt-repository ppa:ubuntu-toolchain-r/test -y; \
+        apt-get update; \
+        apt-get install -y gcc-13 g++-13
 
 RUN apt install --yes \
         doxygen \
@@ -54,6 +52,14 @@ RUN apt install --yes \
         libxrandr-dev \
         wget
 
+RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 130 && \
+    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-13 130
+
+RUN wget https://apt.llvm.org/llvm.sh  && \
+    chmod +x llvm.sh && \
+    ./llvm.sh 18 && \
+    apt-get install clang-format-18 && \
+    ln -sf /usr/bin/clang-format-18 /usr/local/bin/clang-format
 
 # RUN mkdir -p /tmp/libxml2 && \
 #     wget https://gitlab.gnome.org/GNOME/libxml2/-/archive/v2.12.7/libxml2-v2.12.7.tar.gz -O /tmp/libxml2/libxml2-v2.12.7.tar.gz && \
