@@ -17,18 +17,9 @@ std::shared_ptr<Shard> ShardSql::ShardByShardID(int32_t shardId)
 	return (it == byId_.end()) ? nullptr : it->second;
 }
 
-std::vector<std::shared_ptr<Shard>> ShardSql::ShardsByWSAddr(const std::string &wsAddr)
+std::shared_ptr<Shard> ShardSql::ShardByWSAddr(const std::string &wsAddr)
 {
-	std::vector<std::shared_ptr<Shard>> out;
-	auto it = wsAddrToIds_.find(wsAddr);
-	if (it == wsAddrToIds_.end()) return out;
-	out.reserve(it->second.size());
-	for (auto id : it->second)
-	{
-		auto fit = byId_.find(id);
-		if (fit != byId_.end()) out.emplace_back(fit->second);
-	}
-	return out;
+	return nullptr;
 }
 
 std::shared_ptr<Shard> ShardSql::ShardCreate(const Shard &s)

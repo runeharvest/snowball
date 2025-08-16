@@ -2,7 +2,8 @@
 // Copyright (C) 2010  Winch Gate Property Limited
 //
 // This source file has been modified by the following contributors:
-// Copyright (C) 2014  Jan BOON (Kaetemi) <jan.boon@kaetemi.be>
+// Copyright (C) 2014 Jan BOON (Kaetemi) <jan.boon@kaetemi.be>
+// Copyright (C) 2025 Xackery
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
@@ -37,34 +38,18 @@
 #include "login.h"
 #include "connection_ws.h"
 
-//
-// Namespaces
-//
-
 using namespace std;
 using namespace NLMISC;
 using namespace NLNET;
-
-//
-// Variables
-//
 
 CBufServer *WebServer = NULL;
 
 // uint32 is the hostid to the web connection
 map<uint32, CLoginCookie> TempCookies;
 
-//
-// Callbacks
-//
-
 static void cbWSShardChooseShard /* (CMessage &msgin, TSockId from, CCallbackNetBase &netbase)*/ (CMessage &msgin, const std::string &serviceName, TServiceId sid)
 {
 	nlassert(WebServer != NULL);
-
-	//
-	// S10: receive "SCS" message from WS
-	//
 
 	CMemStream msgout;
 	uint32 fake = 0;

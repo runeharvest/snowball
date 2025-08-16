@@ -2,7 +2,8 @@
 // Copyright (C) 2010  Winch Gate Property Limited
 //
 // This source file has been modified by the following contributors:
-// Copyright (C) 2014  Jan BOON (Kaetemi) <jan.boon@kaetemi.be>
+// Copyright (C) 2014 Jan BOON (Kaetemi) <jan.boon@kaetemi.be>
+// Copyright (C) 2025 Xackery
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
@@ -16,10 +17,6 @@
 //
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-//
-// Includes
-//
 
 #include <nel/misc/types_nl.h>
 
@@ -39,25 +36,12 @@
 #include <nel/net/login_cookie.h>
 
 #include "login.h"
-#include "mysql_helper.h"
-
-//
-// Namespaces
-//
 
 using namespace std;
 using namespace NLMISC;
 using namespace NLNET;
 
-//
-// Variables
-//
-
 static CCallbackServer *ClientsServer = 0;
-
-//
-// Functions
-//
 
 void sendToClient(CMessage &msgout, TSockId sockId)
 {
@@ -274,39 +258,49 @@ static void cbClientDisconnection(TSockId from, void *arg)
 
 	nldebug("new client disconnection: %s", ia.asString().c_str());
 
-	string reason;
-
-	CMysqlResult result;
-	MYSQL_ROW row;
-	sint32 nbrow;
-	// sql: userByState
-	reason = sqlQuery("select UId, State, Cookie from user where State!='Offline'", nbrow, row, result);
-	if (!reason.empty()) return;
-
-	if (nbrow == 0)
+	auto users = login_service->Users();
+	if (users.empty())
 	{
 		return;
 	}
 
-	while (row != 0)
+	User *user = nullptr;
+	for (auto &u : users)
 	{
-		CLoginCookie lc;
-		string str = row[2];
-		if (!str.empty())
+		if (u->Cookie.empty())
 		{
-			lc.setFromString(str);
-			if (lc.getUserAddr() == (uint32)(uintptr_t)from)
-			{
-				// got it, if he is not in waiting state, it s not normal, remove all
-				if (row[1] == string("Authorized"))
-				{
-					// sql: userUpdate
-					sqlQuery("update user set state='Offline', ShardId=-1, Cookie='' where UId=" + string(row[0]));
-				}
-				return;
-			}
+			continue;
 		}
-		row = mysql_fetch_row(result);
+
+		CLoginCookie lc;
+		lc.setFromString(u->Cookie);
+		if (lc.getUserAddr() != (uint32)(uintptr_t)from)
+		{
+			continue;
+		}
+
+		if (u->State == UserState::Offline)
+		{
+			nldebug("User %s (%d) already offline, ignoring disconnection from %s", u->Login.c_str(), u->UId, ia.asString().c_str());
+			return;
+		}
+
+		user = u.get();
+		break;
+	}
+
+	if (!user)
+	{
+		nldebug("No user found for disconnection from %s", ia.asString().c_str());
+		return;
+	}
+
+	nlinfo("User %s (%d) disconnected from %s", user->Login.c_str(), user->UId, ia.asString().c_str());
+	user->State = UserState::Offline;
+	if (!login_service->UserUpdate(*user))
+	{
+		nlwarning("Failed to update user state for %s (%d)", user->Login.c_str(), user->UId);
+		return;
 	}
 }
 
@@ -317,69 +311,63 @@ const TCallbackItem ClientCallbackArray[] = {
 
 static void cbWSShardChooseShard(CMessage &msgin, const std::string &serviceName, TServiceId sid)
 {
-	//
-	// S10: receive "SCS" message from WS
-	//
 	CMessage msgout("SCS");
 
 	CLoginCookie cookie;
 	string reason;
+	msgin.serial(reason);
+	msgin.serial(cookie);
 
-	breakable
+	auto user = login_service->UserByCookie(cookie.toString());
+	if (!user)
 	{
-		msgin.serial(reason);
-		msgin.serial(cookie);
-
-		if (!reason.empty())
-		{
-			nldebug("SCS from WS failed: %s", reason.c_str());
-			// sql: userUpdate
-			sqlQuery("update user set state='Offline', ShardId=-1, Cookie='' where Cookie='" + cookie.setToString() + "'");
-			break;
-		}
-
-		CMysqlResult result;
-		MYSQL_ROW row;
-		sint32 nbrow;
-		// sql: userByCookie
-		reason = sqlQuery("select UId, Cookie, Privilege, ExtendedPrivilege from user where Cookie='" + cookie.setToString() + "'", nbrow, row, result);
-		if (!reason.empty()) break;
-		if (nbrow != 1)
-		{
-			reason = "More than one row was found";
-			nldebug("SCS from WS failed with duplicate cookies, sending disconnect messages.");
-			// disconnect them all
-			while (row != 0)
-			{
-				CMessage msgout("DC");
-				uint32 uid = atoui(row[0]);
-				msgout.serial(uid);
-				CUnifiedNetwork::getInstance()->send("WS", msgout);
-				row = mysql_fetch_row(result);
-			}
-			break;
-		}
-
+		reason = "User not found for cookie";
+		nldebug("SCS from WS failed: %s", reason.c_str());
 		msgout.serial(reason);
-		string str = cookie.setToString();
-		msgout.serial(str);
-		string addr;
-		msgin.serial(addr);
-		msgout.serial(addr);
-		ClientsServer->send(msgout, (TSockId)cookie.getUserAddr()); // FIXME: 64-bit
+		CUnifiedNetwork::getInstance()->send(serviceName, msgout);
 		return;
 	}
+
+	if (user->State != UserState::Online)
+	{
+		reason = "User is not online";
+		nldebug("SCS from WS failed: %s", reason.c_str());
+		msgout.serial(reason);
+		CUnifiedNetwork::getInstance()->send(serviceName, msgout);
+		return;
+	}
+
+	if (user->ShardID == 0)
+	{
+		reason = "User has no shard selected";
+		nldebug("SCS from WS failed: %s", reason.c_str());
+		msgout.serial(reason);
+		CUnifiedNetwork::getInstance()->send(serviceName, msgout);
+		return;
+	}
+
+	auto shard = login_service->ShardByShardID(user->ShardID);
+	if (!shard)
+	{
+		reason = "Shard not found for user";
+		nldebug("SCS from WS failed: %s", reason.c_str());
+		msgout.serial(reason);
+		CUnifiedNetwork::getInstance()->send(serviceName, msgout);
+		return;
+	}
+
 	msgout.serial(reason);
+	string str = cookie.setToString();
+	msgout.serial(str);
+	string addr;
+	msgin.serial(addr);
+	msgout.serial(addr);
 	ClientsServer->send(msgout, (TSockId)cookie.getUserAddr()); // FIXME: 64-bit
 }
 
 static const TUnifiedCallbackItem WSCallbackArray[] = {
 	{ "SCS", cbWSShardChooseShard },
 };
-
-//
-//
-//
 
 void connectionClientInit()
 {

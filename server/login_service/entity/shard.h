@@ -26,9 +26,12 @@ struct Shard
 	std::string FromSource;
 	std::string ValidMerchantCode;
 	std::string ApiKeySeed;
+	std::string DynPatchURL;
+	std::string Version;
 	uint8_t Newsletter = 0;
 	uint8_t ChoiceSubLength = 0;
 	uint8_t PBC = 0;
+	uint8_t IsOnline = 0;
 	std::string WSAddr;
 	std::string ClientApplication;
 };

@@ -1,6 +1,9 @@
 // NeLNS - MMORPG Framework <http://dev.ryzom.com/projects/nel/>
 // Copyright (C) 2010  Winch Gate Property Limited
 //
+// This source file has been modified by the following contributors:
+// Copyright (C) 2025 Xackery
+//
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as
 // published by the Free Software Foundation, either version 3 of the
@@ -54,7 +57,6 @@
 #include "connection_client.h"
 #include "connection_ws.h"
 #include "connection_web.h"
-#include "mysql_helper.h"
 #include "login_service.h"
 #include "storage/memory/shard_memory.h"
 #include "storage/memory/user_memory.h"
@@ -412,27 +414,21 @@ NLMISC_COMMAND(shardDatabase, "displays the list of all shards in the database",
 {
 	if (args.size() != 0) return false;
 
-	CMysqlResult result;
-	MYSQL_ROW row;
-	sint32 nbrow;
-
-	// shards
-	string reason = sqlQuery("select ShardId, WsAddr, NbPlayers, Name, Online, ClientApplication, Version, DynPatchURL from shard", nbrow, row, result);
-	if (!reason.empty())
+	auto shards = login_service->Shards();
+	if (shards.empty())
 	{
-		log.displayNL("Display registered users failed; '%s'", reason.c_str());
+		log.displayNL("No shards found in the database");
 		return true;
 	}
 
-	log.displayNL("Display the %d shards in the database :", nbrow);
+	log.displayNL("Display the %d shards in the database :", shards.size());
 	log.displayNL(" > ShardId, WsAddr, NbPlayers, Name, Online, ClientApplication, Version, DynPatchURL");
 
-	if (nbrow != 0)
-		while (row != 0)
-		{
-			log.displayNL(" > '%s' '%s' '%s' '%s' '%s' '%s' '%s' '%s'", row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7]);
-			row = mysql_fetch_row(result);
-		}
+	for (const auto &shard : shards)
+	{
+		log.displayNL(" > %d '%s' %d '%s' %d '%s' '%s' '%s'", shard->ShardID, shard->WSAddr.c_str(), shard->PlayerCount, shard->Name.c_str(),
+		    shard->IsOnline, shard->ClientApplication.c_str(), shard->Version.c_str(), shard->DynPatchURL.c_str());
+	}
 
 	log.displayNL("End of the list");
 
@@ -443,28 +439,19 @@ NLMISC_COMMAND(registeredUsers, "displays the list of all registered users", "")
 {
 	if (args.size() != 0) return false;
 
-	CMysqlResult result;
-	MYSQL_ROW row;
-	sint32 nbrow;
-
-	// sql: users
-	string reason = sqlQuery("select UId, Login, Password, ShardId, State, Privilege, ExtendedPrivilege, Cookie from user", nbrow, row, result);
-	if (!reason.empty())
+	auto users = login_service->Users();
+	if (users.empty())
 	{
-		log.displayNL("Display registered users failed; '%s'", reason.c_str());
+		log.displayNL("No registered users found in the database");
 		return true;
 	}
-
-	log.displayNL("Display the %d registered users :", nbrow);
-	log.displayNL(" > UId, Login, Password, ShardId, State, Privilege, ExtendedPrivilege, Cookie");
-
-	if (nbrow != 0)
-		while (row != 0)
-		{
-			log.displayNL(" > '%s' '%s' '%s' '%s' '%s' '%s' '%s' '%s'", row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7]);
-			row = mysql_fetch_row(result);
-		}
-
+	log.displayNL("Display the %d registered users:", users.size());
+	log.displayNL(" > UId, Login, ShardId, State, Privilege, ExtendedPrivilege, Cookie");
+	for (const auto &user : users)
+	{
+		log.displayNL(" > %d '%s' %d %d '%s' '%s' '%s'", user->UId, user->Login.c_str(), user->ShardID,
+		    user->State, user->Privilege.c_str(), user->ExtendedPrivilege.c_str(), user->Cookie.c_str());
+	}
 	log.displayNL("End of the list");
 
 	return true;
@@ -474,58 +461,45 @@ NLMISC_COMMAND(onlineUsers, "displays the list of online users", "")
 {
 	if (args.size() != 0) return false;
 
-	CMysqlResult result;
-	MYSQL_ROW row;
-	sint32 nbrow;
-
-	uint32 nbusers = 0, nbwait = 0;
-	log.displayNL("Display the online users :");
-
-	// sql: userByState
-	string reason = sqlQuery("select UId, Login, Password, ShardId, State, Privilege, ExtendedPrivilege, Cookie from user where State='Online'", nbrow, row, result);
-	if (!reason.empty())
+	auto users = login_service->UsersByState(UserState::Online);
+	if (users.empty())
 	{
-		log.displayNL("Display online users failed; '%s'", reason.c_str());
+		log.displayNL("No online users found in the database");
 		return true;
 	}
-	if (nbrow != 0)
-		while (row != 0)
-		{
-			log.displayNL(" > '%s' '%s' '%s' '%s' '%s' '%s' '%s' '%s'", row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7]);
-			row = mysql_fetch_row(result);
-		}
-	nbusers = nbrow;
-
-	// sql: userByState
-	reason = sqlQuery("select UId, Login, Password, ShardId, State, Privilege, ExtendedPrivilege, Cookie from user where State='Waiting'", nbrow, row, result);
-	if (!reason.empty())
+	log.displayNL("Display the %d online users:", users.size());
+	log.displayNL(" > UId, Login, ShardId, State, Privilege, ExtendedPrivilege, Cookie");
+	for (const auto &user : users)
 	{
-		log.displayNL("Display waiting users failed; '%s'", reason.c_str());
-		return true;
+		log.displayNL(" > %d '%s' %d %d '%s' '%s' '%s'", user->UId, user->Login.c_str(), user->ShardID,
+		    user->State, user->Privilege.c_str(), user->ExtendedPrivilege.c_str(), user->Cookie.c_str());
 	}
-	if (nbrow != 0)
-		while (row != 0)
-		{
-			log.displayNL(" > '%s' '%s' '%s' '%s' '%s' '%s' '%s' '%s'", row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7]);
-			row = mysql_fetch_row(result);
-		}
-	nbwait = nbrow;
 
-	// sql: userByState
-	reason = sqlQuery("select UId, Login, Password, ShardId, State, Privilege, ExtendedPrivilege, Cookie from user where State='Authorized'", nbrow, row, result);
-	if (!reason.empty())
+	users = login_service->UsersByState(UserState::Waiting);
+	if (!users.empty())
 	{
-		log.displayNL("Display authorized users failed; '%s'", reason.c_str());
-		return true;
-	}
-	if (nbrow != 0)
-		while (row != 0)
+		log.displayNL("Display the %d waiting users:", users.size());
+		log.displayNL(" > UId, Login, ShardId, State, Privilege, ExtendedPrivilege, Cookie");
+		for (const auto &user : users)
 		{
-			log.displayNL(" > '%s' '%s' '%s' '%s' '%s' '%s' '%s' '%s'", row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7]);
-			row = mysql_fetch_row(result);
+			log.displayNL(" > %d '%s'  %d '%s' %d '%s' '%s'", user->UId, user->Login.c_str(), user->ShardID,
+			    user->State, user->Privilege.c_str(), user->ExtendedPrivilege.c_str(), user->Cookie.c_str());
 		}
+	}
+	users = login_service->UsersByState(UserState::Authorized);
+	if (!users.empty())
+	{
+		log.displayNL("Display the %d authorized users:", users.size());
+		log.displayNL(" > UId, Login, ShardId, State, Privilege, ExtendedPrivilege, Cookie");
+		for (const auto &user : users)
+		{
+			log.displayNL(" > %d '%s' %d %d '%s' '%s' '%s'", user->UId, user->Login.c_str(), user->ShardID,
+			    user->State, user->Privilege.c_str(), user->ExtendedPrivilege.c_str(), user->Cookie.c_str());
+		}
+	}
 
-	log.displayNL("End of the list (%d online users, %d waiting, %d authorized)", nbusers, nbwait, nbrow);
+	log.displayNL("End of the list (%d online users, %d waiting, %d authorized)", users.size(),
+	    login_service->UsersByState(UserState::Waiting).size(), login_service->UsersByState(UserState::Authorized).size());
 
 	return true;
 }

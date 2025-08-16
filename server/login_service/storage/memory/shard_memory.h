@@ -17,7 +17,7 @@ public:
 	// ShardDB interface
 	std::vector<std::shared_ptr<Shard>> Shards() override;
 	std::shared_ptr<Shard> ShardByShardID(int32_t shardId) override;
-	std::vector<std::shared_ptr<Shard>> ShardsByWSAddr(const std::string &wsAddr) override;
+	std::shared_ptr<Shard> ShardByWSAddr(const std::string &wsAddr) override;
 	std::shared_ptr<Shard> ShardCreate(const Shard &s) override;
 	bool ShardUpdate(const Shard &s) override;
 	std::vector<std::shared_ptr<Shard>> ShardsByClientApplication(const std::string &clientApp) override;

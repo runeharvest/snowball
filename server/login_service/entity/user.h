@@ -7,13 +7,14 @@ enum class UserState : uint8_t
 {
 	Offline = 0,
 	Online = 1,
-	Waiting = 2
+	Waiting = 2,
+	Authorized = 3,
 };
 
 struct User
 {
 	int32_t UId = 0;
-	int32_t ShardID = 0;
+	int32_t ShardID = -1;
 	int32_t BetaKeyId = 0;
 	std::string Login;
 	std::string Password;

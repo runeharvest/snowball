@@ -32,18 +32,24 @@ std::shared_ptr<Shard> ShardMemory::ShardByShardID(int32_t shardId)
 	return nullptr;
 }
 
-std::vector<std::shared_ptr<Shard>> ShardMemory::ShardsByWSAddr(const std::string &wsAddr)
+std::shared_ptr<Shard> ShardMemory::ShardByWSAddr(const std::string &wsAddr)
 {
 	std::lock_guard<std::mutex> lock(mutex_);
 	std::vector<std::shared_ptr<Shard>> out;
 	for (const auto &shardPtr : all_)
 	{
-		if (shardPtr && shardPtr->WSAddr == wsAddr)
+		if (!shardPtr)
 		{
+			continue;
 			out.emplace_back(shardPtr);
 		}
+		if (shardPtr->WSAddr != wsAddr)
+		{
+			continue;
+		}
+		return shardPtr;
 	}
-	return out;
+	return nullptr;
 }
 
 std::shared_ptr<Shard> ShardMemory::ShardCreate(const Shard &s)

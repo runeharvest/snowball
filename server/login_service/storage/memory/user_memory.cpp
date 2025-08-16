@@ -38,6 +38,19 @@ std::shared_ptr<User> UserMemory::UserByUID(int32_t uid)
 	return nullptr;
 }
 
+std::vector<std::shared_ptr<User>> UserMemory::UsersByShardID(int32_t shardId)
+{
+	std::vector<std::shared_ptr<User>> out;
+	for (auto &u : all_)
+	{
+		if (u->ShardID == shardId)
+		{
+			out.emplace_back(u);
+		}
+	}
+	return out;
+}
+
 std::vector<std::shared_ptr<User>> UserMemory::UsersByState(UserState state)
 {
 	std::vector<std::shared_ptr<User>> out;

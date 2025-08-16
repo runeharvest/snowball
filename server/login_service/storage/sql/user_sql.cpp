@@ -29,6 +29,16 @@ std::shared_ptr<User> UserSql::UserByUID(int32_t uid)
 	return (it == byId_.end()) ? nullptr : it->second;
 }
 
+std::vector<std::shared_ptr<User>> UserSql::UsersByShardID(int32_t shardId)
+{
+	std::vector<std::shared_ptr<User>> out;
+	for (auto &kv : byId_)
+	{
+		if (kv.second->ShardID == shardId) out.emplace_back(kv.second);
+	}
+	return out;
+}
+
 std::vector<std::shared_ptr<User>> UserSql::UsersByState(UserState state)
 {
 	std::vector<std::shared_ptr<User>> out;
