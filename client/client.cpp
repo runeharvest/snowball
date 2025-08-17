@@ -655,6 +655,8 @@ void loopLogin()
 	nlinfo("The encrypted password is %s", CPassword.c_str());
 	string Application = ConfigFile->getVar("ClientApplication").asString();
 	sint32 sid = ConfigFile->getVar("ShardId").asInt();
+	nlinfo("Connecting to LSHost '%s' with Login '%s' and ShardId '%d' and Application '%s'",
+	    LSHost.c_str(), Login.c_str(), sid, Application.c_str());
 
 	// 1/ Authenticate
 	updateLoadingState(ucstring("Authenticate"), false, false);
