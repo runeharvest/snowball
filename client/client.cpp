@@ -18,8 +18,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <nel/misc/types_nl.h>
-#include "snowballs_client.h"
-#include "snowballs_config.h"
+#include "client.h"
+#include "config.h"
 
 // STL includes
 #include <ctime>
@@ -197,10 +197,26 @@ void cbEnableFXAA(CConfigFile::CVar &var);
 // Functions
 //
 
+std::string gameStateName(uint8 in)
+{
+	switch (in)
+	{
+	case GameStateLoad: return "Load";
+	case GameStateUnload: return "Unload";
+	case GameStateReset: return "Reset";
+	case GameStateExit: return "Exit";
+	case GameStateLogin: return "Login";
+	case GameStateOnline: return "Online";
+	case GameStateOffline: return "Offline";
+	default: return "Unknown";
+	}
+}
+
 void switchGameState()
 {
 SwitchNextGameState:
-	nlinfo("Switching to the next game state");
+
+	nlinfo("Switching game state from %s to %s", gameStateName(CurrentGameState).c_str(), gameStateName(NextGameState).c_str());
 	if (CurrentGameState == NextGameState)
 	{
 		nlwarning("NextGameState wasn't changed");
@@ -603,72 +619,111 @@ void releaseOffline()
 void loopLogin()
 {
 	playMusic(SBCLIENT_MUSIC_LOGIN);
-	// todo: login screen, move this stuff to a button or something
+
 	displayLoadingState("Login");
-	if (ConfigFile->getVar("Local").asInt() == 0)
+	// if (ConfigFile->getVar("Local").asInt() != 0)
+	// {
+	// 	NextGameState = GameStateOffline;
+	// 	return;
+	// }
+	// Only attempt to directly log in if we haven't been passed a cookie already.
+	if (!Cookie.empty())
 	{
-		// Only attempt to directly log in if we haven't been passed a cookie already.
-		if (Cookie.empty() || FSAddr.empty())
-		{
-			if (ConfigFile->getVar("UseDirectClient").asInt() == 1)
-			{
-				string result;
-				string LSHost(ConfigFile->getVar("LSHost").asString());
-				Login = ConfigFile->getVar("Login").asString();
-				string Password = ConfigFile->getVar("Password").asString();
-				CHashKeyMD5 hk = getMD5((uint8 *)Password.c_str(), (uint32)Password.size());
-				string CPassword = hk.toString();
-				nlinfo("The crypted password is %s", CPassword.c_str());
-				string Application = ConfigFile->getVar("ClientApplication").asString();
-				sint32 sid = ConfigFile->getVar("ShardId").asInt();
-
-				// 1/ Authenticate
-				updateLoadingState(ucstring("Authenticate"), false, false);
-				result = CLoginClient::authenticateBegin(LSHost, Login, CPassword, Application);
-				if (!result.empty()) goto AuthenticateFail;
-				while (CLoginClient::authenticateUpdate(result))
-					updateLoadingState(ucstring("Authenticate"), false, false);
-				if (!result.empty()) goto AuthenticateFail;
-				goto AuthenticateSuccess;
-
-			AuthenticateFail:
-				nlinfo("*** Authenticate failed '%s' ***", result.c_str());
-				for (TLocalTime t = 0; t < 5.000; t += LocalTimeDelta)
-					updateLoadingState(ucstring("Authenticate failed: ") + ucstring(result), false, false);
-				NextGameState = GameStateOffline;
-				return;
-
-			AuthenticateSuccess:
-				nlinfo("%d Shards are available:", CLoginClient::ShardList.size());
-				for (uint i = 0; i < CLoginClient::ShardList.size(); i++)
-				{
-					nlinfo("    ShardId %3d: %s(%d online players)", CLoginClient::ShardList[i].Id, CLoginClient::ShardList[i].Name.toUtf8().c_str(), CLoginClient::ShardList[i].NbPlayers);
-				}
-
-				// 2/ Select shard
-				updateLoadingState(ucstring("Select shard"), false, false);
-				result = CLoginClient::selectShardBegin(sid);
-				if (!result.empty()) goto SelectFail;
-				while (CLoginClient::selectShardUpdate(result, FSAddr, Cookie))
-					updateLoadingState(ucstring("Select shard"), false, false);
-				if (!result.empty()) goto SelectFail;
-				goto SelectSuccess;
-
-			SelectFail:
-				nlinfo("*** Connection to the shard failed '%s' ***", result.c_str());
-				for (TLocalTime t = 0; t < 5.000; t += LocalTimeDelta)
-					updateLoadingState(ucstring("Select shard failed: ") + ucstring(result), false, false);
-				NextGameState = GameStateOffline;
-				return;
-
-			SelectSuccess:;
-			}
-		}
 		NextGameState = GameStateOnline;
 		return;
 	}
-	NextGameState = GameStateOffline;
-	return;
+
+	if (!FSAddr.empty())
+	{
+		NextGameState = GameStateOnline;
+		return;
+	}
+
+	if (ConfigFile->getVar("UseDirectClient").asInt() != 1)
+	{
+		nlinfo("UseDirectClient is not set, so we will use the login server to connect to the shard");
+		NextGameState = GameStateOffline;
+		return;
+	}
+
+	string result;
+	string LSHost(ConfigFile->getVar("LSHost").asString());
+	Login = ConfigFile->getVar("Login").asString();
+	string Password = ConfigFile->getVar("Password").asString();
+	CHashKeyMD5 hk = getMD5((uint8 *)Password.c_str(), (uint32)Password.size());
+	string CPassword = hk.toString();
+	nlinfo("The encrypted password is %s", CPassword.c_str());
+	string Application = ConfigFile->getVar("ClientApplication").asString();
+	sint32 sid = ConfigFile->getVar("ShardId").asInt();
+
+	// 1/ Authenticate
+	updateLoadingState(ucstring("Authenticate"), false, false);
+	result = CLoginClient::authenticateBegin(LSHost, Login, CPassword, Application);
+	if (!result.empty())
+	{
+		nlinfo("authenticateBegin failed: ", result.c_str());
+		{
+			updateLoadingState(ucstring("Authenticate failed: ") + ucstring(result), false, false);
+			CGameTime::updateTime();
+			CGameTime::advanceTime(1.0);
+		}
+		NextGameState = GameStateOffline;
+		return;
+	}
+	while (CLoginClient::authenticateUpdate(result))
+	{
+		updateLoadingState(ucstring("Authenticate"), false, false);
+	}
+	if (!result.empty())
+	{
+		nlinfo("authenticateUpdate failed: ", result.c_str());
+		for (TLocalTime t = 0; t < 5.000; t += LocalTimeDelta)
+		{
+			updateLoadingState(ucstring("Authenticate failed: ") + ucstring(result), false, false);
+			CGameTime::updateTime();
+			CGameTime::advanceTime(1.0);
+		}
+		NextGameState = GameStateOffline;
+		return;
+	}
+
+	nlinfo("%d Shards are available:", CLoginClient::ShardList.size());
+	for (uint i = 0; i < CLoginClient::ShardList.size(); i++)
+	{
+		nlinfo("ShardId %3d: %s(%d online players)", CLoginClient::ShardList[i].Id, CLoginClient::ShardList[i].Name.toUtf8().c_str(), CLoginClient::ShardList[i].NbPlayers);
+	}
+
+	// 2/ Select shard
+	updateLoadingState(ucstring("Select shard"), false, false);
+	result = CLoginClient::selectShardBegin(sid);
+	if (!result.empty())
+	{
+		nlinfo("*** Connection to the shard failed '%s' ***", result.c_str());
+		for (TLocalTime t = 0; t < 5.000; t += LocalTimeDelta)
+		{
+			updateLoadingState(ucstring("Select shard failed: ") + ucstring(result), false, false);
+			CGameTime::updateTime();
+			CGameTime::advanceTime(1.0);
+		}
+		NextGameState = GameStateOffline;
+		return;
+	}
+	while (CLoginClient::selectShardUpdate(result, FSAddr, Cookie))
+	{
+		updateLoadingState(ucstring("Select shard"), false, false);
+	}
+	if (!result.empty())
+	{
+		nlinfo("*** Connection to the shard failed '%s' ***", result.c_str());
+		for (TLocalTime t = 0; t < 5.000; t += LocalTimeDelta)
+		{
+			updateLoadingState(ucstring("Select shard failed: ") + ucstring(result), false, false);
+			CGameTime::updateTime();
+			CGameTime::advanceTime(1.0);
+		}
+		NextGameState = GameStateOffline;
+		return;
+	}
 }
 
 void loopIngame()
@@ -1244,7 +1299,6 @@ sint main(int argc, char **argv)
 			INelContext::getInstance().setWindowedApplication(true);
 
 #if SBCLIENT_USE_LOG
-			// create snowballs_client.log
 			// filedisplayer only deletes the 001 etc
 			if (SBCLIENT_ERASE_LOG && CFile::isExists(SBCLIENT_LOG_FILE))
 				CFile::deleteFile(SBCLIENT_LOG_FILE);
@@ -1281,7 +1335,18 @@ sint main(int argc, char **argv)
 #endif
 	}
 
-	// Command to quit the client
+	NLMISC_COMMAND(q, "quit the client", "")
+	{
+		// check args, if there s not the right number of parameter, return bad
+		if (args.size() != 0) return false;
+
+		log.displayNL("Exit requested");
+
+		SBCLIENT::NextGameState = SBCLIENT::GameStateExit;
+
+		return true;
+	}
+
 	NLMISC_COMMAND(quit, "quit the client", "")
 	{
 		// check args, if there s not the right number of parameter, return bad
@@ -1315,7 +1380,7 @@ sint main(int argc, char **argv)
 		return true;
 	}
 
-	NLMISC_COMMAND(sb_login, "go to the login screen", "")
+	NLMISC_COMMAND(login, "go to the login screen", "")
 	{
 		if (args.size() != 0) return false;
 		SBCLIENT::NextGameState = SBCLIENT::GameStateLogin;

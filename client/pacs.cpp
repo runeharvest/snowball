@@ -36,7 +36,7 @@
 #include <nel/misc/vectord.h>
 #include <nel/misc/config_file.h>
 
-#include "snowballs_client.h"
+#include "client.h"
 #include "landscape.h"
 #include "pacs.h"
 #include "entities.h"

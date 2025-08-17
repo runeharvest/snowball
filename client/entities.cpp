@@ -53,7 +53,7 @@
 #include <nel/pacs/u_global_retriever.h>
 #include <nel/pacs/u_global_position.h>
 
-#include "snowballs_client.h"
+#include "client.h"
 #include "entities.h"
 #include "pacs.h"
 #include "animation.h"

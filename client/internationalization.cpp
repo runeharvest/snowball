@@ -24,8 +24,8 @@
 #include <nel/misc/i18n.h>
 
 // Project includes
-#include "snowballs_client.h"
-#include "snowballs_config.h"
+#include "client.h"
+#include "config.h"
 #include "configuration.h"
 
 using namespace std;

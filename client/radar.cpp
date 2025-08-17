@@ -33,7 +33,7 @@
 #include <nel/3d/u_texture.h>
 
 #include "camera.h"
-#include "snowballs_client.h"
+#include "client.h"
 #include "commands.h"
 #include "mouse_listener.h"
 #include "entities.h"

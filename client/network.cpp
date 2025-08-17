@@ -35,7 +35,7 @@
 
 #include <nel/pacs/u_move_primitive.h>
 
-#include "snowballs_client.h"
+#include "client.h"
 #include "commands.h"
 #include "network.h"
 #include "entities.h"

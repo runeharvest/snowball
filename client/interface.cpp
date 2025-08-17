@@ -33,7 +33,7 @@
 #include <nel/3d/u_material.h>
 #include <nel/3d/u_landscape.h>
 
-#include "snowballs_client.h"
+#include "client.h"
 #include "interface.h"
 
 //

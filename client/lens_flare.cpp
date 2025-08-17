@@ -30,7 +30,7 @@
 
 #include "camera.h"
 #include "landscape.h"
-#include "snowballs_client.h"
+#include "client.h"
 #include "mouse_listener.h"
 
 //

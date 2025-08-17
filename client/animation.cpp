@@ -45,7 +45,7 @@
 
 #include "animation.h"
 #include "entities.h"
-#include "snowballs_client.h"
+#include "client.h"
 
 //
 // Namespaces

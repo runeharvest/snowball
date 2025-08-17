@@ -29,7 +29,7 @@
 #include <nel/misc/time_nl.h>
 
 // Project includes
-#include "snowballs_client.h"
+#include "client.h"
 #include "configuration.h"
 
 using namespace std;

@@ -17,7 +17,6 @@ run-client: run
 gdb:
 	cd build/bin && gdb -q -ex run ./client
 
-# valid options include: naming_service, login_server, welcome_service, position_service, chat_service, collision_service, frontend_service, snowballs_client
 .PHONY: run-%
 run-%:
 	@mkdir -p build/bin/logs

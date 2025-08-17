@@ -39,7 +39,7 @@
 
 #include <nel/3d/stereo_hmd.h>
 
-#include "snowballs_client.h"
+#include "client.h"
 #include "entities.h"
 #include "mouse_listener.h"
 #include "pacs.h"

@@ -36,7 +36,7 @@
 #include <nel/3d/u_texture.h>
 
 #include "graph.h"
-#include "snowballs_client.h"
+#include "client.h"
 
 //
 // Namespaces

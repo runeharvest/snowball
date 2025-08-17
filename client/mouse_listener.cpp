@@ -35,7 +35,7 @@
 #include <nel/misc/plane.h>
 #include <nel/misc/config_file.h>
 
-#include "snowballs_client.h"
+#include "client.h"
 #include "mouse_listener.h"
 #include "entities.h"
 #include "camera.h"

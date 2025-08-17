@@ -35,7 +35,7 @@
 
 #include "mouse_listener.h"
 #include "camera.h"
-#include "snowballs_client.h"
+#include "client.h"
 #include "entities.h"
 
 //

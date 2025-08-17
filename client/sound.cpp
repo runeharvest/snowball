@@ -33,7 +33,7 @@
 #include <nel/sound/u_listener.h>
 #include <nel/sound/u_source.h>
 
-#include "snowballs_client.h"
+#include "client.h"
 #include "sound.h"
 #include "entities.h"
 #include "configuration.h"

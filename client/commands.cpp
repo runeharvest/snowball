@@ -41,7 +41,7 @@
 #include <nel/3d/stereo_hmd.h>
 
 #include "network.h"
-#include "snowballs_client.h"
+#include "client.h"
 #include "interface.h"
 
 #if SBCLIENT_DEV_PIXEL_PROGRAM

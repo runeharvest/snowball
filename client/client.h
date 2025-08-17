@@ -20,7 +20,7 @@
 #ifndef SBCLIENT_SNOWBALLS_CLIENT_H
 #define SBCLIENT_SNOWBALLS_CLIENT_H
 #include <nel/misc/types_nl.h>
-#include "snowballs_config.h"
+#include "config.h"
 
 #include <nel/misc/types_nl.h>
 

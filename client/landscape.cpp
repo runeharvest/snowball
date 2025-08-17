@@ -45,7 +45,7 @@
 #include <nel/3d/u_visual_collision_entity.h>
 #include <nel/3d/u_visual_collision_manager.h>
 
-#include "snowballs_client.h"
+#include "client.h"
 #include "pacs.h"
 #include "commands.h"
 #include "mouse_listener.h"
