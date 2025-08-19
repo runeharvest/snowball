@@ -44,7 +44,7 @@ using namespace std;
 using namespace NLMISC;
 using namespace NLNET;
 
-static LoginService *login_service;
+extern LoginService *login_service;
 // Structures
 
 struct CFrontEnd

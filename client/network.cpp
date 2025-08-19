@@ -88,7 +88,7 @@ static void cbAddEntity(CMessage &msgin, TSockId from, CCallbackNetBase &netbase
 
 	nlinfo("New player named '%s' comes in at position (%8.2f, %8.2f, %8.2f)", name.c_str(), startPosition.x, startPosition.y, startPosition.z);
 
-	if (Self == NULL && name == Login.toUtf8())
+	if (Self == NULL && name == Login)
 	{
 		addEntity(id, name, CEntity::Self, startPosition, startPosition);
 	}
@@ -246,7 +246,7 @@ static void cbIdentification(CMessage &msgin, TSockId from, CCallbackNetBase &ne
 	//	}
 
 	// send to the network my entity
-	std::string login_name(Login.toUtf8());
+	std::string login_name(Login);
 	sendAddEntity(id, login_name, 1);
 }
 

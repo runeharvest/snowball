@@ -56,7 +56,6 @@
 #include "login.h"
 #include "connection_client.h"
 #include "connection_ws.h"
-#include "connection_web.h"
 #include "login_service.h"
 #include "storage/memory/shard_memory.h"
 #include "storage/memory/user_memory.h"
@@ -84,6 +83,10 @@ NLMISC::CLog *Output = NULL;
 // vector<CShard>	Shards;
 
 vector<CShard> Shards;
+LoginService *login_service = nullptr;
+
+static ShardMemory shardMemory;
+static UserMemory userMemory;
 
 //
 // Functions
@@ -289,10 +292,7 @@ void beep(uint freq, uint nb, uint beepDuration, uint pauseDuration)
 class CLogin : public IService
 {
 public:
-	bool UseDirectClient;
-
 	CLogin()
-	    : UseDirectClient(false)
 	{
 	}
 
@@ -301,27 +301,27 @@ public:
 	{
 		beep();
 
-		auto shardMemory = ShardMemory();
-		auto userMemory = UserMemory();
-
 		login_service = new LoginService(shardMemory, userMemory);
 
 		Shard shard;
 		shard.Account = "Test";
 		login_service->ShardCreate(shard);
-		nlinfo("shard created with id %d", shard.ShardID);
-		auto newShard = login_service->ShardByShardID(0);
-		if (newShard == nullptr)
-		{
-			nlerror("new shard not found");
-			return;
-		}
-		nlinfo("shard account found: %s", newShard->Account.c_str());
+		// nlinfo("shard created with id %d", shard.ShardID);
+		// auto newShard = login_service->ShardByShardID(0);
+		// if (newShard == nullptr)
+		// {
+		// 	nlerror("new shard not found");
+		// 	return;
+		// }
+		// nlinfo("shard account found: %s", newShard->Account.c_str());
+
+		Shard testShard;
+		testShard.Account = "SnowBall Service";
+		testShard.ClientApplication = "snowball";
+		auto shardResult = login_service->ShardCreate(testShard);
+		nlinfo("shard created with id %d", shardResult->ShardID);
 
 		Output = new CLog;
-
-		if (ConfigFile.exists("UseDirectClient"))
-			UseDirectClient = ConfigFile.getVar("UseDirectClient").asBool();
 
 		string fn = IService::getInstance()->SaveFilesDirectory;
 		fn += "login.stat";
@@ -335,10 +335,7 @@ public:
 
 		connectionWSInit();
 
-		if (UseDirectClient)
-			connectionClientInit();
-		else
-			connectionWebInit();
+		connectionClientInit();
 
 		Output->displayNL("Login Service initialized");
 	}
@@ -346,10 +343,7 @@ public:
 	bool update()
 	{
 		connectionWSUpdate();
-		if (UseDirectClient)
-			connectionClientUpdate();
-		else
-			connectionWebUpdate();
+		connectionClientUpdate();
 		return true;
 	}
 
@@ -357,10 +351,7 @@ public:
 	void release()
 	{
 		connectionWSRelease();
-		if (UseDirectClient)
-			connectionClientRelease();
-		else
-			connectionWebRelease();
+		connectionClientRelease();
 
 		Output->displayNL("Login Service released");
 	}

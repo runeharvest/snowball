@@ -85,7 +85,7 @@ extern float FramesPerSecond;
 extern float FramesPerSecondSmooth;
 
 // Stuff for connection
-extern ucstring Login;
+extern std::string Login;
 
 /*******************************************************************
  *                        SNOWBALLS CLIENT                         *

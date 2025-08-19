@@ -60,11 +60,11 @@ void string_escape(string &str)
 
 static void cbClientVerifyLoginPassword(CMessage &msgin, TSockId from, CCallbackNetBase &netbase)
 {
-	string reason;
+	std::string reason;
 	sint32 uid = -1;
 	ucstring login;
-	string cpassword;
-	string application;
+	std::string cpassword;
+	std::string application;
 	msgin.serial(login);
 	msgin.serial(cpassword);
 	msgin.serial(application);
@@ -81,8 +81,11 @@ static void cbClientVerifyLoginPassword(CMessage &msgin, TSockId from, CCallback
 			return;
 		}
 
-		user->Password = cpassword;
-		user = login_service->UserCreate(*user);
+		User newUser;
+		newUser.Login = login.toUtf8();
+		newUser.Password = cpassword;
+		newUser.State = UserState::Offline;
+		user = login_service->UserCreate(newUser);
 		if (!user)
 		{
 			reason = "Failed to create user";
@@ -147,13 +150,18 @@ static void cbClientVerifyLoginPassword(CMessage &msgin, TSockId from, CCallback
 	// Send success message
 	CMessage msgout("VLP");
 	msgout.serial(reason);
-	msgout.serial(uid);
+
+	uint32 shardCount = (uint32)shards.size();
+	msgout.serial(shardCount);
 
 	for (const auto &shard : shards)
 	{
-		ucstring shardname;
-		shardname.fromUtf8(shard->Name);
-		msgout.serial(shardname, shard->PlayerCount, shard->ShardID);
+		string shardName = shard->Name;
+
+		// shardname.fromUtf8(shard->Name);
+		// int32_t playerCount = shard->PlayerCount;
+		// uint32 shardID = shard->ShardID;
+		msgout.serial(shardName, shard->PlayerCount, shard->ShardID);
 	}
 
 	netbase.send(msgout, from);

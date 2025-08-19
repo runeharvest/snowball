@@ -132,7 +132,7 @@ float FramesPerSecond;
 float FramesPerSecondSmooth;
 
 // Stuff for connection
-ucstring Login;
+std::string Login;
 static string FSAddr, Cookie;
 
 /*******************************************************************
@@ -487,12 +487,12 @@ void initOffline()
 		playMusic(SBCLIENT_MUSIC_WAIT);
 
 		uint32 id = NextEID++;
-		Login = ucstring("Entity" + toString(id));
+		Login = "Entity" + toString(id);
 
 		// Creates the self entity
 		displayLoadingState("Creating offline entity");
 		CVector startPoint = CVector(ConfigFile->getVar("StartPoint").asFloat(0), ConfigFile->getVar("StartPoint").asFloat(1), ConfigFile->getVar("StartPoint").asFloat(2));
-		addEntity(id, Login.toUtf8(), CEntity::Self, startPoint, startPoint);
+		addEntity(id, Login, CEntity::Self, startPoint, startPoint);
 
 		displayLoadingState("Load Landscape");
 		loadAllZonesAround();
@@ -726,6 +726,7 @@ void loopLogin()
 		NextGameState = GameStateOffline;
 		return;
 	}
+	NextGameState = GameStateOnline;
 }
 
 void loopIngame()

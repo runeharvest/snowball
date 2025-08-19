@@ -1,16 +1,17 @@
+run:
+	cd build/bin && ./client
 
 init:
 	@echo "Copying base files to build/bin..."
-	@mkdir -p build/bin/cfg
 	@mkdir -p build/bin/logs
-	@mkdir -p build/bin/data
-	@cp -r base/*.cfg build/bin/cfg/
-	@unzip -qq -o base/data.zip -d build/bin
+	@-unlink build/bin/cfg 2>/dev/null || true
+	@cd build/bin && ln -s ../../base/cfg cfg
+	@-unlink build/bin/data 2>/dev/null || true
+	@cd base && unzip -qq -o data.zip
+	@cd build/bin && ln -s ../../base/data data
 	@echo "Done"
 
 
-run:
-	cd build/bin && ./client
 
 run-client: run
 
@@ -20,13 +21,11 @@ gdb:
 .PHONY: run-%
 run-%:
 	@mkdir -p build/bin/logs
-	@mkdir -p build/bin/config
 	@printf '\033]2;$*\007'
 	@cd build/bin && exec ./$*
 
 gdb-%:
 	@mkdir -p build/bin/logs
-	@mkdir -p build/bin/config
 	@cd build/bin && gdb -q -ex run ./$* || exit 1
 
 
