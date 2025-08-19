@@ -156,12 +156,7 @@ static void cbClientVerifyLoginPassword(CMessage &msgin, TSockId from, CCallback
 
 	for (const auto &shard : shards)
 	{
-		string shardName = shard->Name;
-
-		// shardname.fromUtf8(shard->Name);
-		// int32_t playerCount = shard->PlayerCount;
-		// uint32 shardID = shard->ShardID;
-		msgout.serial(shardName, shard->PlayerCount, shard->ShardID);
+		msgout.serial(shard->Name, shard->PlayerCount, shard->ShardID);
 	}
 
 	netbase.send(msgout, from);

@@ -10,7 +10,7 @@ struct Shard
 	int32_t CurrentFunds = 0;
 	int32_t ValidIdBilling = 0;
 	int32_t GMId = 0;
-	int32_t PlayerCount = 0;
+	uint32_t PlayerCount = 0;
 	std::string Name;
 	std::string IdBilling;
 	std::string Community;
