@@ -4,16 +4,29 @@ RuneHarvest's variation of this cleans up and isolates the code outside of the m
 
 # Requirements
 
+
 currently only built for linux
 
-- reopen in dev container (vscode)
+later I plan for stack repo to be the starting point, but for now
+
+- clone this repo, and clone shared up one directory, e.g.:
+    - mkdir -p /src/rh
+    - cd /src/rh
+    - git clone [snowball repo]
+    - git clone [shared repo]
+    - cd snowball
+    - if not using dev container, ln -s ../shared shared
+
+- reopen in dev container (vscode) (this binds shared as a mount point)
 - `make init` to copy config/data to build/bin
 - ctrl+shift+p `CMake: Configure` with Linux
 - ctrl+shift+p `Cmake: Build Target`, select all
 - `make run` to run the game
 
+
+
 ## Controls
-   
+
 Use the mouse to look around.
 Use arrow keys to move forward, backward, strafe left and strafe right.
 
