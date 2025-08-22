@@ -78,7 +78,11 @@
         "variant": "cpp",
         "expected": "cpp",
         "ranges": "cpp",
-        "bitset": "cpp"
+        "bitset": "cpp",
+        "typeindex": "cpp",
+        "valarray": "cpp",
+        "any": "cpp",
+        "regex": "cpp"
     },
     "search.exclude": {
         "**/node_modules": true,

@@ -65,12 +65,12 @@ static void cbWSConnection(const std::string &serviceName, TServiceId sid, void 
 	if (IService::getInstance()->ConfigFile.getVar("AcceptExternalShards").asInt() == 1)
 		return;
 
-	auto shard = login_service->ShardByWSAddr(ia.ipAddress());
-	if (!shard)
-	{
-		refuseShard(sid, "Bad shard identification, the shard (WSAddr %s) is not in the database and can't be added", ia.ipAddress().c_str());
-		return;
-	}
+    auto shard = loginService->ShardByWSAddr(ia.ipAddress());
+    if (!shard)
+    {
+        refuseShard(sid, "Bad shard identification, the shard (WSAddr %s) is not in the database and can't be added", ia.ipAddress().c_str());
+        return;
+    }
 }
 
 static void cbWSDisconnection(const std::string &serviceName, TServiceId sid, void *arg)
@@ -91,37 +91,44 @@ static void cbWSDisconnection(const std::string &serviceName, TServiceId sid, vo
 		nlinfo("ShardId %d with IP '%s' is offline!", Shards[i].ShardId, ia.asString().c_str());
 		nlinfo("*** ShardId %3d NbPlayers %3d -> %3d", Shards[i].ShardId, Shards[i].NbPlayers, 0);
 
-		auto shard = login_service->ShardByShardID(Shards[i].ShardId);
-		if (!shard)
-		{
-			nlwarning("ShardId %d not found in the database, can't update it", Shards[i].ShardId);
-			continue;
-		}
-		shard->IsOnline = 0;
-		shard->PlayerCount = 0;
-		if (!login_service->ShardUpdate(*shard))
-		{
-			nlwarning("Failed to update shard %d in the database", Shards[i].ShardId);
-		}
+        auto shard = loginService->ShardByShardID(Shards[i].ShardId);
+        if (!shard)
+        {
+            nlwarning("ShardId %d not found in the database, can't update it", Shards[i].ShardId);
+            continue;
+        }
+        shard->IsOnline = 0;
+        shard->PlayerCount = 0;
+        if (!loginService->ShardUpdate(*shard))
+        {
+            nlwarning("Failed to update shard %d in the database", Shards[i].ShardId);
+        }
 
-		NbPlayers -= Shards[i].NbPlayers;
+        NbPlayers -= Shards[i].NbPlayers;
 
-		Shards[i].NbPlayers = 0;
+        Shards[i].NbPlayers = 0;
 
-		auto users = login_service->UsersByShardID(Shards[i].ShardId);
-		for (const auto &user : users)
-		{
-			user->State = UserState::Offline;
-			if (!login_service->UserUpdate(*user))
-			{
-				nlwarning("Failed to update user %d state to Offline", user->UId);
-			}
-		}
+        auto usersResult = loginService->UsersByShardID(Shards[i].ShardId);
+        if (!usersResult)
+        {
+            nlwarning("Failed to get users by shard id %d", Shards[i].ShardId);
+            continue;
+        }
+        auto users = *usersResult;
+        for (auto user : users)
+        {
+            user.State = domain::UserState::Offline;
 
-		Shards.erase(Shards.begin() + i);
-		return;
-	}
-	nlwarning("Shard %s goes offline but wasn't online!", ia.asString().c_str());
+            if (!loginService->UserUpdate(user))
+            {
+                nlwarning("Failed to update user %d state to Offline", user.UserID);
+            }
+        }
+
+        Shards.erase(Shards.begin() + i);
+        return;
+    }
+    nlwarning("Shard %s goes offline but wasn't online!", ia.asString().c_str());
 }
 
 static void cbWSIdentification(CMessage &msgin, const std::string &serviceName, TServiceId sid)
@@ -143,58 +150,58 @@ static void cbWSIdentification(CMessage &msgin, const std::string &serviceName, 
 
 	string reason;
 
-	auto shard = login_service->ShardByShardID(shardId);
-	if (!shard)
-	{
-		if (IService::getInstance()->ConfigFile.getVar("AcceptExternalShards").asInt() != 1)
-		{
-			refuseShard(sid, "Bad shard identification, The shard %d is not in the database and can't be added", shardId);
-			return;
-		}
+    auto shard = loginService->ShardByShardID(shardId);
+    if (!shard)
+    {
+        if (IService::getInstance()->ConfigFile.getVar("AcceptExternalShards").asInt() != 1)
+        {
+            refuseShard(sid, "Bad shard identification, The shard %d is not in the database and can't be added", shardId);
+            return;
+        }
 
-		auto newShard = std::make_shared<Shard>();
-		newShard->ShardID = shardId;
-		newShard->WSAddr = ia.ipAddress();
-		newShard->ClientApplication = application;
+        auto newShard = domain::Shard();
+        newShard.ShardID = shardId;
+        newShard.WSAddr = ia.ipAddress();
+        newShard.ClientApplication = application;
 
-		shard = login_service->ShardCreate(*newShard);
-		if (!reason.empty())
-		{
-			refuseShard(sid, "Failed to create shard %d: %s", shardId, reason.c_str());
-			return;
-		}
-		nlinfo("The ShardId %d with ip '%s' was inserted in the database and is online!", shardId, ia.ipAddress().c_str());
-		Shards.push_back(CShard(shardId, sid));
-		return;
-	}
+        shard = loginService->ShardCreate(newShard);
+        if (!reason.empty())
+        {
+            refuseShard(sid, "Failed to create shard %d: %s", shardId, reason.c_str());
+            return;
+        }
+        nlinfo("The ShardId %d with ip '%s' was inserted in the database and is online!", shardId, ia.ipAddress().c_str());
+        Shards.push_back(CShard(shardId, sid));
+        return;
+    }
 
-	if (shard->WSAddr != ia.ipAddress())
-	{
-		refuseShard(sid, "Bad shard identification, ShardId %d should come from '%s' and come from '%s'", shardId, shard->WSAddr.c_str(), ia.ipAddress().c_str());
-		return;
-	}
+    if (shard->WSAddr != ia.ipAddress())
+    {
+        refuseShard(sid, "Bad shard identification, ShardId %d should come from '%s' and come from '%s'", shardId, shard->WSAddr.c_str(), ia.ipAddress().c_str());
+        return;
+    }
 
-	sint32 s = findShard(shardId);
-	if (s != -1)
-	{
-		// the shard is already online, disconnect the old one and set the new one
-		refuseShard(Shards[s].SId, "A new shard connected with the same IP/ShardId, you were replaced");
+    sint32 s = findShard(shardId);
+    if (s != -1)
+    {
+        // the shard is already online, disconnect the old one and set the new one
+        refuseShard(Shards[s].SId, "A new shard connected with the same IP/ShardId, you were replaced");
 
-		Shards[s].SId = sid;
+        Shards[s].SId = sid;
 		Shards[s].ShardId = shardId;
-	}
-	else
-	{
-		Shards.push_back(CShard(shardId, sid));
-	}
+    }
+    else
+    {
+        Shards.push_back(CShard(shardId, sid));
+    }
 
-	shard->IsOnline = 1;
+    shard->IsOnline = 1;
 	shard->PlayerCount = 0;
-	if (!login_service->ShardUpdate(*shard))
-	{
-		refuseShard(sid, "Failed to update shard %d in the database", shardId);
-		return;
-	}
+    if (!loginService->ShardUpdate(*shard))
+    {
+        refuseShard(sid, "Failed to update shard %d in the database", shardId);
+        return;
+    }
 }
 
 static void cbWSClientConnected(CMessage &msgin, const std::string &serviceName, TServiceId sid)
@@ -210,113 +217,113 @@ static void cbWSClientConnected(CMessage &msgin, const std::string &serviceName,
 	else
 		nlinfo("Received a validation that a client is disconnected on the frontend");
 
-	auto user = login_service->UserByUID(Id);
-	if (!user)
-	{
-		nlwarning("User with UId %d not found", Id);
-		Output->displayNL("###: %3d User not found", Id);
-		return;
-	}
+    auto user = loginService->UserByUserID(Id);
+    if (!user)
+    {
+        nlwarning("User with UserID %d not found", Id);
+        Output->displayNL("###: %3d User not found", Id);
+        return;
+    }
 
-	sint ShardPos = findShardWithSId(sid);
+    sint ShardPos = findShardWithSId(sid);
 
-	switch (con)
-	{
-	case 0:
-		if (user->State != UserState::Online)
-		{
-			nlwarning("User %d is not online, can't disconnect him from the shard", Id);
-			Output->displayNL("###: %3d User isn't online, his state is '%d'", Id, user->State);
-			return;
-		}
+    switch (con)
+    {
+    case 0:
+        if (user->State != domain::UserState::Online)
+        {
+            nlwarning("User %d is not online, can't disconnect him from the shard", Id);
+            Output->displayNL("###: %3d User isn't online, his state is '%d'", Id, user->State);
+            return;
+        }
 
-		user->State = UserState::Online;
-		user->ShardID = Shards[ShardPos].ShardId;
-		if (!login_service->UserUpdate(*user))
-		{
-			nlwarning("Failed to set user %d state to Online", user->UId);
-			return;
-		}
+        user->State = domain::UserState::Online;
+        user->ShardID = Shards[ShardPos].ShardId;
+        if (!loginService->UserUpdate(*user))
+        {
+            nlwarning("Failed to set user %d state to Online", user->UserID);
+            return;
+        }
 
-		if (ShardPos != -1)
-		{
-			nlinfo("*** ShardId %3d NbPlayers %3d -> %3d", Shards[ShardPos].ShardId, Shards[ShardPos].NbPlayers, Shards[ShardPos].NbPlayers + 1);
-			Shards[ShardPos].NbPlayers++;
+        if (ShardPos != -1)
+        {
+            nlinfo("*** ShardId %3d NbPlayers %3d -> %3d", Shards[ShardPos].ShardId, Shards[ShardPos].NbPlayers, Shards[ShardPos].NbPlayers + 1);
+            Shards[ShardPos].NbPlayers++;
 
-			auto shard = login_service->ShardByShardID(Shards[ShardPos].ShardId);
-			if (!shard)
-			{
-				nlwarning("ShardId %d not found in the database, can't update it", Shards[ShardPos].ShardId);
-				return;
-			}
+            auto shard = loginService->ShardByShardID(Shards[ShardPos].ShardId);
+            if (!shard)
+            {
+                nlwarning("ShardId %d not found in the database, can't update it", Shards[ShardPos].ShardId);
+                return;
+            }
 
-			shard->PlayerCount = Shards[ShardPos].NbPlayers;
-			if (!login_service->ShardUpdate(*shard))
-			{
-				nlwarning("Failed to update shard %d in the database", Shards[ShardPos].ShardId);
-				return;
-			}
-		}
-		else
-			nlwarning("user connected shard isn't in the shard list");
+            shard->PlayerCount = Shards[ShardPos].NbPlayers;
+            if (!loginService->ShardUpdate(*shard))
+            {
+                nlwarning("Failed to update shard %d in the database", Shards[ShardPos].ShardId);
+                return;
+            }
+        }
+        else
+            nlwarning("user connected shard isn't in the shard list");
 
-		nldebug("Id %d is connected on the shard", Id);
-		Output->displayNL("###: %3d User connected to the shard (%d)", Id, Shards[ShardPos].ShardId);
+        nldebug("Id %d is connected on the shard", Id);
+        Output->displayNL("###: %3d User connected to the shard (%d)", Id, Shards[ShardPos].ShardId);
 
-		NbPlayers++;
-		if (NbPlayers > RecordNbPlayers)
-		{
-			RecordNbPlayers = NbPlayers;
-			beep(2000, 1, 100, 0);
-			nlwarning("New player number record!!! %d players online on all shards", RecordNbPlayers);
-		}
-		return;
-	case 1: // new client connecting
-		if (user->State != UserState::Waiting)
-		{
-			nlwarning("User %d is not waiting, can't connect him to the shard", Id);
-			Output->displayNL("###: %3d User isn't waiting, his state is '%d'", Id, user->State);
-			return;
-		}
-		break;
-	default: // disconnecting
-		user->State = UserState::Offline;
-		user->ShardID = -1;
-		if (!login_service->UserUpdate(*user))
-		{
-			nlwarning("Failed to set user %d state to Offline", user->UId);
-			return;
-		}
+        NbPlayers++;
+        if (NbPlayers > RecordNbPlayers)
+        {
+            RecordNbPlayers = NbPlayers;
+            beep(2000, 1, 100, 0);
+            nlwarning("New player number record!!! %d players online on all shards", RecordNbPlayers);
+        }
+        return;
+    case 1: // new client connecting
+        if (user->State != domain::UserState::Waiting)
+        {
+            nlwarning("User %d is not waiting, can't connect him to the shard", Id);
+            Output->displayNL("###: %3d User isn't waiting, his state is '%d'", Id, user->State);
+            return;
+        }
+        break;
+    default: // disconnecting
+        user->State = domain::UserState::Offline;
+        user->ShardID = -1;
+        if (!loginService->UserUpdate(*user))
+        {
+            nlwarning("Failed to set user %d state to Offline", user->UserID);
+            return;
+        }
 
-		if (ShardPos == -1)
-		{
-			nlwarning("user disconnected shard isn't in the shard list");
-			return;
-		}
-		nlinfo("*** ShardId %3d NbPlayers %3d -> %3d", Shards[ShardPos].ShardId, Shards[ShardPos].NbPlayers, Shards[ShardPos].NbPlayers - 1);
-		Shards[ShardPos].NbPlayers--;
+        if (ShardPos == -1)
+        {
+            nlwarning("user disconnected shard isn't in the shard list");
+            return;
+        }
+        nlinfo("*** ShardId %3d NbPlayers %3d -> %3d", Shards[ShardPos].ShardId, Shards[ShardPos].NbPlayers, Shards[ShardPos].NbPlayers - 1);
+        Shards[ShardPos].NbPlayers--;
 
-		auto shard = login_service->ShardByShardID(Shards[ShardPos].ShardId);
-		if (!shard)
-		{
-			nlwarning("ShardId %d not found in the database, can't update it", Shards[ShardPos].ShardId);
-			return;
-		}
+        auto shard = loginService->ShardByShardID(Shards[ShardPos].ShardId);
+        if (!shard)
+        {
+            nlwarning("ShardId %d not found in the database, can't update it", Shards[ShardPos].ShardId);
+            return;
+        }
 
-		shard->PlayerCount = Shards[ShardPos].NbPlayers;
-		if (!login_service->ShardUpdate(*shard))
-		{
-			nlwarning("Failed to update shard %d in the database", Shards[ShardPos].ShardId);
-			return;
-		}
+        shard->PlayerCount = Shards[ShardPos].NbPlayers;
+        if (!loginService->ShardUpdate(*shard))
+        {
+            nlwarning("Failed to update shard %d in the database", Shards[ShardPos].ShardId);
+            return;
+        }
 
-		nldebug("Id %d is disconnected from the shard", Id);
-		Output->displayNL("###: %3d User disconnected from the shard (%d)", Id, Shards[ShardPos].ShardId);
+        nldebug("Id %d is disconnected from the shard", Id);
+        Output->displayNL("###: %3d User disconnected from the shard (%d)", Id, Shards[ShardPos].ShardId);
 
-		NbPlayers--;
+        NbPlayers--;
 
-		return;
-	}
+        return;
+    }
 }
 
 static void cbWSReportFSState(CMessage &msgin, const std::string &serviceName, TServiceId sid)
@@ -401,19 +408,19 @@ static void cbWSReportFSState(CMessage &msgin, const std::string &serviceName, T
 		}
 	}
 
-	auto shard = login_service->ShardByShardID(cshard.ShardId);
-	if (!shard)
-	{
-		nlwarning("ShardId %d not found in the database, can't update it", cshard.ShardId);
-		return;
-	}
+    auto shard = loginService->ShardByShardID(cshard.ShardId);
+    if (!shard)
+    {
+        nlwarning("ShardId %d not found in the database, can't update it", cshard.ShardId);
+        return;
+    }
 
-	shard->DynPatchURL = dynPatchURL;
-	if (!login_service->ShardUpdate(*shard))
-	{
-		nlwarning("Failed to update shard %d DynPatchURL in the database", cshard.ShardId);
-		return;
-	}
+    shard->DynPatchURL = dynPatchURL;
+    if (!loginService->ShardUpdate(*shard))
+    {
+        nlwarning("Failed to update shard %d DynPatchURL in the database", cshard.ShardId);
+        return;
+    }
 }
 
 static void cbWSReportNoPatch(CMessage &msgin, const std::string &serviceName, TServiceId sid)
@@ -434,18 +441,18 @@ static void cbWSReportNoPatch(CMessage &msgin, const std::string &serviceName, T
 		cshard.FrontEnds[i].Patching = false;
 	}
 
-	auto shard = login_service->ShardByShardID(cshard.ShardId);
-	if (!shard)
-	{
-		nlwarning("ShardId %d not found in the database, can't update it", cshard.ShardId);
-		return;
-	}
-	shard->DynPatchURL.clear();
-	if (!login_service->ShardUpdate(*shard))
-	{
-		nlwarning("Failed to update shard %d DynPatchURL in the database", cshard.ShardId);
-		return;
-	}
+    auto shard = loginService->ShardByShardID(cshard.ShardId);
+    if (!shard)
+    {
+        nlwarning("ShardId %d not found in the database, can't update it", cshard.ShardId);
+        return;
+    }
+    shard->DynPatchURL.clear();
+    if (!loginService->ShardUpdate(*shard))
+    {
+        nlwarning("Failed to update shard %d DynPatchURL in the database", cshard.ShardId);
+        return;
+    }
 }
 
 static void cbWSSetShardOpen(CMessage &msgin, const std::string &serviceName, TServiceId sid)
@@ -463,18 +470,18 @@ static void cbWSSetShardOpen(CMessage &msgin, const std::string &serviceName, TS
 
 	CShard &cshard = Shards[shardPos];
 
-	auto shard = login_service->ShardByShardID(cshard.ShardId);
-	if (!shard)
-	{
-		nlwarning("ShardId %d not found in the database, can't update it", cshard.ShardId);
-		return;
-	}
-	shard->IsOnline = shardOpenState;
-	if (!login_service->ShardUpdate(*shard))
-	{
-		nlwarning("Failed to update shard %d open state in the database", cshard.ShardId);
-		return;
-	}
+    auto shard = loginService->ShardByShardID(cshard.ShardId);
+    if (!shard)
+    {
+        nlwarning("ShardId %d not found in the database, can't update it", cshard.ShardId);
+        return;
+    }
+    shard->IsOnline = shardOpenState;
+    if (!loginService->ShardUpdate(*shard))
+    {
+        nlwarning("Failed to update shard %d open state in the database", cshard.ShardId);
+        return;
+    }
 }
 
 static const TUnifiedCallbackItem WSCallbackArray[] = {

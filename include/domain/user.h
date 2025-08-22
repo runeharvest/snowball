@@ -2,7 +2,9 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <vector>
 
+namespace domain {
 enum class UserState : uint8_t
 {
 	Offline = 0,
@@ -13,7 +15,7 @@ enum class UserState : uint8_t
 
 struct User
 {
-	int32_t UId = 0;
+	int32_t UserID = 0;
 	int32_t ShardID = -1;
 	int32_t BetaKeyId = 0;
 	std::string Login;
@@ -37,3 +39,7 @@ struct User
 	UserState State = UserState::Offline;
 	uint8_t Gender = 0;
 };
+
+using Users = std::vector<User>;
+
+} // namespace domain

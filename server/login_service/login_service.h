@@ -1,9 +1,18 @@
 #pragma once
 #include <expected>
-#include "user.h"
 #include "user_db.h"
-#include "shard.h"
 #include "shard_db.h"
+#include <domain/user.h>
+#include <domain/shard.h>
+
+namespace domain {
+struct User;
+enum class UserState : std::uint8_t;
+struct Shard;
+}
+
+template <typename T>
+using Result = std::expected<T, std::string>;
 
 // ---------- Business logic layer ----------
 // Service suffix per requirement
@@ -18,22 +27,22 @@ public:
 	virtual ~LoginService() = default;
 
 	// Users
-	virtual std::expected<std::vector<std::shared_ptr<User>>, std::string> Users();
-	virtual std::shared_ptr<User> UserByLogin(const std::string &login);
-	virtual std::shared_ptr<User> UserByUID(int32_t uid);
-	virtual std::vector<std::shared_ptr<User>> UsersByState(UserState state);
-	virtual std::vector<std::shared_ptr<User>> UsersByShardID(int32_t shardId);
-	virtual std::shared_ptr<User> UserByCookie(const std::string &cookie);
-	virtual std::shared_ptr<User> UserCreate(const User &u);
-	virtual bool UserUpdate(const User &u);
+    [[nodiscard]] virtual Result<domain::Users> Users();
+    [[nodiscard]] virtual Result<domain::User> UserByLogin(const std::string login);
+    [[nodiscard]] virtual Result<domain::User> UserByUserID(int32_t userID);
+    [[nodiscard]] virtual Result<domain::Users> UsersByState(domain::UserState state);
+    [[nodiscard]] virtual Result<domain::Users> UsersByShardID(int32_t shardID);
+    [[nodiscard]] virtual Result<domain::User> UserByCookie(const std::string cookie);
+    [[nodiscard]] virtual Result<domain::User> UserCreate(const domain::User user);
+    [[nodiscard]] virtual bool UserUpdate(const domain::User user);
 
-	// Shards
-	virtual std::vector<std::shared_ptr<Shard>> Shards();
-	virtual std::shared_ptr<Shard> ShardByShardID(int32_t shardId);
-	virtual std::shared_ptr<Shard> ShardByWSAddr(const std::string &wsAddr);
-	virtual std::shared_ptr<Shard> ShardCreate(const Shard &s);
-	virtual bool ShardUpdate(const Shard &s);
-	virtual std::vector<std::shared_ptr<Shard>> ShardsByClientApplication(const std::string &clientApp);
+    // Shards
+    [[nodiscard]] virtual Result<domain::Shards> Shards();
+    [[nodiscard]] virtual Result<domain::Shard> ShardByShardID(int32_t shardID);
+    [[nodiscard]] virtual Result<domain::Shard> ShardByWSAddr(const std::string wsAddr);
+    [[nodiscard]] virtual Result<domain::Shard> ShardCreate(const domain::Shard shard);
+    [[nodiscard]] virtual bool ShardUpdate(const domain::Shard shard);
+    [[nodiscard]] virtual Result<domain::Shards> ShardsByClientApplication(const std::string clientApp);
 
 protected:
 	ShardDB &shardDB_;

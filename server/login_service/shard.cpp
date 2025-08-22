@@ -1,31 +1,31 @@
 #include "login_service.h"
 
-std::vector<std::shared_ptr<Shard>> LoginService::Shards()
+Result<domain::Shards> LoginService::Shards()
 {
 	return shardDB_.Shards();
 }
 
-std::shared_ptr<Shard> LoginService::ShardByShardID(int32_t shardId)
+Result<domain::Shard> LoginService::ShardByShardID(int32_t shardID)
 {
-	return shardDB_.ShardByShardID(shardId);
+    return shardDB_.ShardByShardID(shardID);
 }
 
-std::shared_ptr<Shard> LoginService::ShardByWSAddr(const std::string &wsAddr)
+Result<domain::Shard> LoginService::ShardByWSAddr(const std::string wsAddr)
 {
 	return shardDB_.ShardByWSAddr(wsAddr);
 }
 
-std::shared_ptr<Shard> LoginService::ShardCreate(const Shard &s)
+Result<domain::Shard> LoginService::ShardCreate(const domain::Shard shard)
 {
-	return shardDB_.ShardCreate(s);
+    return shardDB_.ShardCreate(shard);
 }
 
-bool LoginService::ShardUpdate(const Shard &s)
+bool LoginService::ShardUpdate(const domain::Shard shard)
 {
-	return shardDB_.ShardUpdate(s);
+    return shardDB_.ShardUpdate(shard);
 }
 
-std::vector<std::shared_ptr<Shard>> LoginService::ShardsByClientApplication(const std::string &clientApp)
+Result<domain::Shards> LoginService::ShardsByClientApplication(const std::string clientApp)
 {
 	return shardDB_.ShardsByClientApplication(clientApp);
 }

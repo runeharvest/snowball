@@ -1,11 +1,13 @@
 #pragma once
-#include "user.h"
-#include "user_db.h"
+#include <user_db.h>
 #include <optional>
 #include <unordered_map>
 #include <expected>
+#include <domain/user.h>
 
-// ---------- In-memory UserDB implementation ----------
+template <typename T>
+using Result = std::expected<T, std::string>;
+
 class UserMemory final : public UserDB
 {
 public:
@@ -13,18 +15,18 @@ public:
 	~UserMemory() override = default;
 
 	// UserDB interface
-	std::expected<std::vector<std::shared_ptr<User>>, std::string>  Users() override;
-	std::shared_ptr<User> UserByLogin(const std::string &login) override;
-	std::shared_ptr<User> UserByUID(int32_t uid) override;
-	std::vector<std::shared_ptr<User>> UsersByState(UserState state) override;
-	std::vector<std::shared_ptr<User>> UsersByShardID(int32_t shardId) override;
-	std::shared_ptr<User> UserByCookie(const std::string &cookie) override;
-	std::shared_ptr<User> UserCreate(const User &u) override;
-	bool UserUpdate(const User &u) override;
+    [[nodiscard]] Result<domain::Users> Users() override;
+    [[nodiscard]] Result<domain::User> UserByLogin(const std::string login) override;
+    [[nodiscard]] Result<domain::User> UserByUserID(int32_t userID) override;
+    [[nodiscard]] Result<domain::Users> UsersByState(domain::UserState state) override;
+    [[nodiscard]] Result<domain::Users> UsersByShardID(int32_t shardID) override;
+    [[nodiscard]] Result<domain::User> UserByCookie(const std::string cookie) override;
+    [[nodiscard]] Result<domain::User> UserCreate(const domain::User user) override;
+    [[nodiscard]] bool UserUpdate(const domain::User user) override;
 
 private:
 	int32_t nextId_ = 1;
-	std::vector<std::shared_ptr<User>> all_;
+    domain::Users all_;
 
-	static std::shared_ptr<User> CloneToPtr(const User &u);
+    mutable std::mutex mutex_;
 };

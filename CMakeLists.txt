@@ -6,9 +6,37 @@
 
 CMAKE_MINIMUM_REQUIRED(VERSION 3.22)
 
-SET(CMAKE_CXX_STANDARD 23)
-SET(CMAKE_CXX_STANDARD_REQUIRED ON)
-SET(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+
+project(RyzomCore VERSION 4.1.0.0 LANGUAGES CXX C)
+
+option(WITH_SNOWBALLS_CLIENT ON)
+option(WITH_SNOWBALLS_SERVER ON)
+option(WITH_TESTING "Build tests" ON)
+
+option(WITH_RYZOM_TOOLS OFF)
+option(WITH_RYZOM_SERVER OFF)
+
+option(RYZOM_CLIENT_CREATE_ACCOUNT_URL     "https://core.ryzom.dev/ams/")
+option(RYZOM_CLIENT_EDIT_ACCOUNT_URL       "https://core.ryzom.dev/ams/")
+option(RYZOM_CLIENT_FORGET_PASSWORD_URL    "https://core.ryzom.dev/ams/")
+option(RYZOM_CLIENT_PATCH_URL              "https://cdn.ryzom.dev/core4/patch/")
+option(RYZOM_CLIENT_APP_NAME               "core4")
+option(RYZOM_CLIENT_RELEASENOTES_URL       "https://core4.ryzom.dev/releasenotes/index.php")
+option(RYZOM_CLIENT_RELEASENOTES_RING_URL  "https://core4.ryzom.dev/releasenotes_ring/index.php")
+option(RYZOM_CLIENT_UI_FEATURE_FLAG        "ryzomcore")
+option(NL_VERSION_MAJOR ${RyzomCore_VERSION_MAJOR})
+option(NL_VERSION_MINOR ${RyzomCore_VERSION_MINOR})
+option(NL_VERSION_PATCH ${RyzomCore_VERSION_PATCH})
+option(NL_VERSION_BUILD ${RyzomCore_VERSION_TWEAK})
+option(YEAR "2001-${CURRENT_YEAR}")
+option(AUTHOR "Rune Harvest Community, with Winch Gate and The Ryzom Core Community")
+
+
+
 
 #-----------------------------------------------------------------------------
 # Load some macros.
@@ -53,14 +81,6 @@ ELSE()
   SET(CURRENT_YEAR "2019")
 ENDIF()
 
-PROJECT(RyzomCore VERSION 4.1.0.0 LANGUAGES CXX C)
-SET(NL_VERSION_MAJOR ${RyzomCore_VERSION_MAJOR})
-SET(NL_VERSION_MINOR ${RyzomCore_VERSION_MINOR})
-SET(NL_VERSION_PATCH ${RyzomCore_VERSION_PATCH} CACHE STRING "Patch version")
-SET(NL_VERSION_BUILD ${RyzomCore_VERSION_TWEAK} CACHE STRING "Build number")
-SET(YEAR "2001-${CURRENT_YEAR}")
-SET(AUTHOR "Winch Gate and The Ryzom Core Community")
-
 #-----------------------------------------------------------------------------
 # Redirect output files
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
@@ -94,22 +114,6 @@ NL_SETUP_BUILD_FLAGS()
 NL_SETUP_PREFIX_PATHS()
 RYZOM_SETUP_PREFIX_PATHS()
 
-
-SET(WITH_RYZOM_TOOLS FALSE)
-SET(WITH_RYZOM_SERVER FALSE)
-
-#-----------------------------------------------------------------------------
-# Default values for URL's
-SET(RYZOM_CLIENT_CREATE_ACCOUNT_URL     "https://core.ryzom.dev/ams/" CACHE STRING "Ryzom Client Create Account URL")
-SET(RYZOM_CLIENT_EDIT_ACCOUNT_URL       "https://core.ryzom.dev/ams/" CACHE STRING "Ryzom Client Edit Account URL")
-SET(RYZOM_CLIENT_FORGET_PASSWORD_URL    "https://core.ryzom.dev/ams/" CACHE STRING "Ryzom Client Forget Password URL")
-SET(RYZOM_CLIENT_PATCH_URL              "https://cdn.ryzom.dev/core4/patch/" CACHE STRING "Ryzom Client Patch URL")
-SET(RYZOM_CLIENT_APP_NAME               "core4")
-
-SET(RYZOM_CLIENT_RELEASENOTES_URL       "https://core4.ryzom.dev/releasenotes/index.php" CACHE STRING "Ryzom Client Release Notes URL")
-SET(RYZOM_CLIENT_RELEASENOTES_RING_URL  "https://core4.ryzom.dev/releasenotes_ring/index.php" CACHE STRING "Ryzom Client Release Notes URL")
-
-SET(RYZOM_CLIENT_UI_FEATURE_FLAG        "ryzomcore" CACHE STRING "Ryzom Client UI Feature Flag")
 
 #-----------------------------------------------------------------------------
 #Platform specifics
@@ -258,21 +262,11 @@ IF(WITH_MSQUIC)
   FIND_PACKAGE(msquic REQUIRED)
 ENDIF()
 
-IF(WITH_NEL_TESTS)
-  FIND_PACKAGE(CppTest)
+if(WITH_TESTS)
+    add_subdirectory(tests)
+endif()
 
-  ENABLE_TESTING()
-  include(FetchContent)
-  FetchContent_Declare(
-          googletest
-          URL https://github.com/google/googletest/archive/a7f443b80b105f940225332ed3c31f2790092f47.zip
-          EXCLUDE_FROM_ALL
-  )
-  SET(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-  FetchContent_MakeAvailable(googletest)
-  include(GoogleTest)
-  include(cmake/add_test_executable.cmake)
-ENDIF()
+
 
 IF(WITH_NEL)
   IF(HUNTER_ENABLED)

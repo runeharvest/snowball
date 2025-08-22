@@ -59,6 +59,8 @@
 #include "login_service.h"
 #include "storage/memory/shard_memory.h"
 #include "storage/memory/user_memory.h"
+#include <domain/user.h>
+#include <domain/shard.h>
 
 //
 // Namespaces
@@ -83,7 +85,7 @@ NLMISC::CLog *Output = NULL;
 // vector<CShard>	Shards;
 
 vector<CShard> Shards;
-LoginService *login_service = nullptr;
+LoginService *loginService = nullptr;
 
 static ShardMemory shardMemory;
 static UserMemory userMemory;
@@ -301,54 +303,54 @@ public:
 	{
 		beep();
 
-		login_service = new LoginService(shardMemory, userMemory);
+		loginService = new LoginService(shardMemory, userMemory);
 
-		Shard shard;
-		shard.Account = "Test";
-		login_service->ShardCreate(shard);
-		// nlinfo("shard created with id %d", shard.ShardID);
-		// auto newShard = login_service->ShardByShardID(0);
-		// if (newShard == nullptr)
-		// {
-		// 	nlerror("new shard not found");
-		// 	return;
-		// }
-		// nlinfo("shard account found: %s", newShard->Account.c_str());
+        domain::Shard shard;
+        shard.Account = "Test";
+        loginService->ShardCreate(shard);
+        // nlinfo("shard created with id %d", shard.ShardID);
+        // auto newShard = loginService->ShardByShardID(0);
+        // if (newShard == nullptr)
+        // {
+        // 	nlerror("new shard not found");
+        // 	return;
+        // }
+        // nlinfo("shard account found: %s", newShard->Account.c_str());
 
-		Shard testShard;
-		testShard.Account = "SnowBall Service";
-		testShard.ClientApplication = "snowball";
-		auto shardResult = login_service->ShardCreate(testShard);
-		nlinfo("shard created with id %d", shardResult->ShardID);
+        domain::Shard testShard;
+        testShard.Account = "SnowBall Service";
+        testShard.ClientApplication = "snowball";
+        auto shardResult = loginService->ShardCreate(testShard);
+        nlinfo("shard created with id %d", shardResult->ShardID);
 
-		Output = new CLog;
+        Output = new CLog;
 
-		string fn = IService::getInstance()->SaveFilesDirectory;
-		fn += "login.stat";
-		nlinfo("Login stat in directory '%s'", fn.c_str());
-		Fd = new NLMISC::CFileDisplayer(fn);
-		Output->addDisplayer(Fd);
-		if (WindowDisplayer) Output->addDisplayer(WindowDisplayer);
+        string fn = IService::getInstance()->SaveFilesDirectory;
+        fn += "login.stat";
+        nlinfo("Login stat in directory '%s'", fn.c_str());
+        Fd = new NLMISC::CFileDisplayer(fn);
+        Output->addDisplayer(Fd);
+        if (WindowDisplayer) Output->addDisplayer(WindowDisplayer);
 
-		// Initialize the database access
-		// sqlInit();
+        // Initialize the database access
+        // sqlInit();
 
-		connectionWSInit();
+        connectionWSInit();
 
-		connectionClientInit();
+        connectionClientInit();
 
-		Output->displayNL("Login Service initialized");
-	}
+        Output->displayNL("Login Service initialized");
+    }
 
-	bool update()
-	{
-		connectionWSUpdate();
-		connectionClientUpdate();
+    bool update()
+    {
+        connectionWSUpdate();
+        connectionClientUpdate();
 		return true;
-	}
+    }
 
-	/// release the service, save the universal time
-	void release()
+    /// release the service, save the universal time
+    void release()
 	{
 		connectionWSRelease();
 		connectionClientRelease();
@@ -405,98 +407,124 @@ NLMISC_COMMAND(shardDatabase, "displays the list of all shards in the database",
 {
 	if (args.size() != 0) return false;
 
-	auto shards = login_service->Shards();
-	if (shards.empty())
-	{
-		log.displayNL("No shards found in the database");
-		return true;
-	}
+    auto shardsResult = loginService->Shards();
+    if (!shardsResult)
+    {
+        nlwarning("shards: %s", shardsResult.error());
+        return true;
+    }
+    auto &shards = *shardsResult;
+    if (shards.size() == 0)
+    {
+        log.displayNL("No shards found in the database");
+        return true;
+    }
 
-	log.displayNL("Display the %d shards in the database :", shards.size());
-	log.displayNL(" > ShardId, WsAddr, NbPlayers, Name, Online, ClientApplication, Version, DynPatchURL");
+    log.displayNL("Display the %d shards in the database :", shards.size());
+    log.displayNL(" > ShardId, WsAddr, NbPlayers, Name, Online, ClientApplication, Version, DynPatchURL");
 
-	for (const auto &shard : shards)
-	{
-		log.displayNL(" > %d '%s' %d '%s' %d '%s' '%s' '%s'", shard->ShardID, shard->WSAddr.c_str(), shard->PlayerCount, shard->Name.c_str(),
-		    shard->IsOnline, shard->ClientApplication.c_str(), shard->Version.c_str(), shard->DynPatchURL.c_str());
-	}
+    for (const auto &shard : shards)
+    {
+        log.displayNL(" > %d '%s' %d '%s' %d '%s' '%s' '%s'", shard.ShardID, shard.WSAddr.c_str(), shard.PlayerCount, shard.Name.c_str(),
+            shard.IsOnline, shard.ClientApplication.c_str(), shard.Version.c_str(), shard.DynPatchURL.c_str());
+    }
 
-	log.displayNL("End of the list");
+    log.displayNL("End of the list");
 
-	return true;
+    return true;
 }
 
 NLMISC_COMMAND(registeredUsers, "displays the list of all registered users", "")
 {
 	if (args.size() != 0) return false;
 
-	auto usersResp = login_service->Users();
-	if (!usersResp)
-	{
-		log.displayNL("Users failed: %s", usersResp.error());
-		return true;
-	}
-	auto users = usersResp.value();
-	if (users.empty())
-	{
-		log.displayNL("No registered users found in the database");
-		return true;
-	}
-	log.displayNL("Display the %d registered users:", users.size());
-	log.displayNL(" > UId, Login, ShardId, State, Privilege, ExtendedPrivilege, Cookie");
-	for (const auto &user : users)
-	{
-		log.displayNL(" > %d '%s' %d %d '%s' '%s' '%s'", user->UId, user->Login.c_str(), user->ShardID,
-		    user->State, user->Privilege.c_str(), user->ExtendedPrivilege.c_str(), user->Cookie.c_str());
-	}
-	log.displayNL("End of the list");
+    auto usersResult = loginService->Users();
+    if (!usersResult)
+    {
+        log.displayNL("Users failed: %s", usersResult.error());
+        return true;
+    }
+    auto users = usersResult.value();
+    if (users.empty())
+    {
+        log.displayNL("No registered users found in the database");
+        return true;
+    }
+    log.displayNL("Display the %d registered users:", users.size());
+    log.displayNL(" > UserID, Login, ShardId, State, Privilege, ExtendedPrivilege, Cookie");
+    for (const auto &user : users)
+    {
+        log.displayNL(" > %d '%s' %d %d '%s' '%s' '%s'", user.UserID, user.Login.c_str(), user.ShardID,
+            user.State, user.Privilege.c_str(), user.ExtendedPrivilege.c_str(), user.Cookie.c_str());
+    }
+    log.displayNL("End of the list");
 
-	return true;
+    return true;
 }
 
 NLMISC_COMMAND(onlineUsers, "displays the list of online users", "")
 {
 	if (args.size() != 0) return false;
 
-	auto users = login_service->UsersByState(UserState::Online);
-	if (users.empty())
-	{
-		log.displayNL("No online users found in the database");
-		return true;
-	}
-	log.displayNL("Display the %d online users:", users.size());
-	log.displayNL(" > UId, Login, ShardId, State, Privilege, ExtendedPrivilege, Cookie");
-	for (const auto &user : users)
-	{
-		log.displayNL(" > %d '%s' %d %d '%s' '%s' '%s'", user->UId, user->Login.c_str(), user->ShardID,
-		    user->State, user->Privilege.c_str(), user->ExtendedPrivilege.c_str(), user->Cookie.c_str());
-	}
+    auto usersResult = loginService->UsersByState(domain::UserState::Online);
+    if (!usersResult)
+    {
+        log.displayNL("UsersByState failed: %s", usersResult.error());
+        return true;
+    }
+    auto &users = *usersResult;
+    if (users.size() == 0)
+    {
+        log.displayNL("No online users found in the database");
+        return true;
+    }
+    auto usersOnline = users.size();
+    log.displayNL("Display the %d online users:", users.size());
+    log.displayNL(" > UserID, Login, ShardId, State, Privilege, ExtendedPrivilege, Cookie");
+    for (const auto &user : users)
+    {
+        log.displayNL(" > %d '%s' %d %d '%s' '%s' '%s'", user.UserID, user.Login.c_str(), user.ShardID,
+            user.State, user.Privilege.c_str(), user.ExtendedPrivilege.c_str(), user.Cookie.c_str());
+    }
 
-	users = login_service->UsersByState(UserState::Waiting);
-	if (!users.empty())
-	{
-		log.displayNL("Display the %d waiting users:", users.size());
-		log.displayNL(" > UId, Login, ShardId, State, Privilege, ExtendedPrivilege, Cookie");
-		for (const auto &user : users)
-		{
-			log.displayNL(" > %d '%s'  %d '%s' %d '%s' '%s'", user->UId, user->Login.c_str(), user->ShardID,
-			    user->State, user->Privilege.c_str(), user->ExtendedPrivilege.c_str(), user->Cookie.c_str());
-		}
-	}
-	users = login_service->UsersByState(UserState::Authorized);
-	if (!users.empty())
-	{
-		log.displayNL("Display the %d authorized users:", users.size());
-		log.displayNL(" > UId, Login, ShardId, State, Privilege, ExtendedPrivilege, Cookie");
-		for (const auto &user : users)
-		{
-			log.displayNL(" > %d '%s' %d %d '%s' '%s' '%s'", user->UId, user->Login.c_str(), user->ShardID,
-			    user->State, user->Privilege.c_str(), user->ExtendedPrivilege.c_str(), user->Cookie.c_str());
-		}
-	}
+    usersResult = loginService->UsersByState(domain::UserState::Waiting);
+    if (!usersResult)
+    {
+        log.displayNL("UsersByState failed: %s", usersResult.error());
+        return true;
+    }
+    users = *usersResult;
+    if (users.size() != 0)
+    {
+        log.displayNL("Display the %d waiting users:", users.size());
+        log.displayNL(" > UserID, Login, ShardId, State, Privilege, ExtendedPrivilege, Cookie");
+        for (const auto &user : users)
+        {
+            log.displayNL(" > %d '%s'  %d '%s' %d '%s' '%s'", user.UserID, user.Login.c_str(), user.ShardID,
+                user.State, user.Privilege.c_str(), user.ExtendedPrivilege.c_str(), user.Cookie.c_str());
+        }
+    }
+    auto usersWaiting = users.size();
+    usersResult = loginService->UsersByState(domain::UserState::Authorized);
+    if (!usersResult)
+    {
+        log.displayNL("UsersByState failed: %s", usersResult.error());
+        return true;
+    }
+    users = *usersResult;
+    if (users.size() != 0)
+    {
 
-	log.displayNL("End of the list (%d online users, %d waiting, %d authorized)", users.size(),
-	    login_service->UsersByState(UserState::Waiting).size(), login_service->UsersByState(UserState::Authorized).size());
+        log.displayNL("Display the %d authorized users:", users.size());
+        log.displayNL(" > UserID, Login, ShardId, State, Privilege, ExtendedPrivilege, Cookie");
+        for (const auto &user : users)
+        {
+            log.displayNL(" > %d '%s' %d %d '%s' '%s' '%s'", user.UserID, user.Login.c_str(), user.ShardID,
+                user.State, user.Privilege.c_str(), user.ExtendedPrivilege.c_str(), user.Cookie.c_str());
+        }
+    }
+    auto usersAuthorized = users.size();
 
-	return true;
+    log.displayNL("End of the list (%d online users, %d waiting, %d authorized)", usersOnline, usersWaiting, usersAuthorized);
+    return true;
 }

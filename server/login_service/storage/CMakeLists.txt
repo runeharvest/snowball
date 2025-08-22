@@ -1,9 +1,15 @@
-FILE(GLOB SRC *.cpp *.h)
+file(GLOB SRC *.cpp *.h)
 
-ADD_SUBDIRECTORY(memory)
-ADD_SUBDIRECTORY(sql)
+add_subdirectory(memory)
+# add_subdirectory(sql)
 
-ADD_LIBRARY(storage STATIC ${SRC})
-TARGET_INCLUDE_DIRECTORIES(storage PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-TARGET_LINK_LIBRARIES(storage PRIVATE storage_memory storage_sql)
-SET_TARGET_PROPERTIES(storage PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED YES)
+add_library(storage STATIC ${SRC})
+
+target_include_directories(storage
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_SOURCE_DIR}/include
+)
+
+target_link_libraries(storage PRIVATE storage_memory)
+set_target_properties(storage PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED YES)

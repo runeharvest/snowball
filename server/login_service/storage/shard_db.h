@@ -1,18 +1,22 @@
 #pragma once
-#include "shard.h"
 #include <memory>
 #include <string>
 #include <vector>
+#include <domain/shard.h>
+#include <expected>
+
+template <typename T>
+using Result = std::expected<T, std::string>;
 
 struct ShardDB
 {
 	virtual ~ShardDB() = default;
 
 	// Mirrors LoginService shard-facing methods
-	virtual std::vector<std::shared_ptr<Shard>> Shards() = 0;
-	virtual std::shared_ptr<Shard> ShardByShardID(int32_t shardId) = 0;
-	virtual std::shared_ptr<Shard> ShardByWSAddr(const std::string &wsAddr) = 0;
-	virtual std::shared_ptr<Shard> ShardCreate(const Shard &s) = 0;
-	virtual bool ShardUpdate(const Shard &s) = 0;
-	virtual std::vector<std::shared_ptr<Shard>> ShardsByClientApplication(const std::string &clientApp) = 0;
+    [[nodiscard]] virtual Result<domain::Shards> Shards() = 0;
+    [[nodiscard]] virtual Result<domain::Shard> ShardByShardID(int32_t shardID) = 0;
+    [[nodiscard]] virtual Result<domain::Shard> ShardByWSAddr(const std::string wsAddr) = 0;
+    [[nodiscard]] virtual Result<domain::Shard> ShardCreate(const domain::Shard shard) = 0;
+    [[nodiscard]] virtual bool ShardUpdate(const domain::Shard shard) = 0;
+    [[nodiscard]] virtual Result<domain::Shards> ShardsByClientApplication(const std::string clientApp) = 0;
 };

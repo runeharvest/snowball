@@ -2,97 +2,83 @@
 #include <algorithm>
 #include <mutex>
 
-std::shared_ptr<Shard> ShardMemory::CloneToPtr(const Shard &s)
-{
-	return std::make_shared<Shard>(s);
-}
-
-std::vector<std::shared_ptr<Shard>> ShardMemory::Shards()
+Result<domain::Shards> ShardMemory::Shards()
 {
 	std::lock_guard<std::mutex> lock(mutex_);
-	return all_; // copy of vector of shared_ptrs
+    return all_;
 }
 
-std::shared_ptr<Shard> ShardMemory::ShardByShardID(int32_t shardId)
+Result<domain::Shard> ShardMemory::ShardByShardID(int32_t shardId)
 {
 	std::lock_guard<std::mutex> lock(mutex_);
-	for (const auto &shardPtr : all_)
-	{
-		if (!shardPtr)
-		{
-			continue;
-		}
-		if (shardPtr->ShardID != shardId)
-		{
-			continue;
-		}
+    for (const auto shard : all_)
+    {
+        if (shard.ShardID != shardId)
+        {
+            continue;
+        }
 
-		return shardPtr;
-	}
-	return nullptr;
+        return shard;
+    }
+    return std::unexpected("Shard not found");
 }
 
-std::shared_ptr<Shard> ShardMemory::ShardByWSAddr(const std::string &wsAddr)
+Result<domain::Shard> ShardMemory::ShardByWSAddr(const std::string wsAddr)
 {
 	std::lock_guard<std::mutex> lock(mutex_);
-	std::vector<std::shared_ptr<Shard>> out;
-	for (const auto &shardPtr : all_)
-	{
-		if (!shardPtr)
-		{
-			continue;
-			out.emplace_back(shardPtr);
-		}
-		if (shardPtr->WSAddr != wsAddr)
-		{
-			continue;
-		}
-		return shardPtr;
-	}
-	return nullptr;
+    domain::Shards out;
+    for (const auto shard : all_)
+    {
+        if (shard.WSAddr != wsAddr)
+        {
+            continue;
+        }
+        return shard;
+    }
+    return std::unexpected("Shard not found");
 }
 
-std::shared_ptr<Shard> ShardMemory::ShardCreate(const Shard &s)
+Result<domain::Shard> ShardMemory::ShardCreate(domain::Shard shard)
 {
-	std::lock_guard<std::mutex> lock(mutex_);
-	Shard sCopy = s;
-	if (sCopy.ShardID == 0)
-	{
-		sCopy.ShardID = nextId_;
-		nextId_++;
-	}
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (shard.ShardID == 0)
+    {
+        shard.ShardID = nextId_;
+        nextId_++;
+    }
 
-	auto ptr = CloneToPtr(sCopy);
-	all_.push_back(ptr);
-	// No id bound by default. Caller may BindShardID or AssignShardID.
-	return ptr;
+    all_.push_back(shard);
+    // No id bound by default. Caller may BindShardID or AssignShardID.
+    return shard;
 }
 
-bool ShardMemory::ShardUpdate(const Shard &s)
+bool ShardMemory::ShardUpdate(const domain::Shard shard)
 {
 	std::lock_guard<std::mutex> lock(mutex_);
-	for (auto &p : all_)
-	{
-		if (p.get() == &s)
-		{
-			*p = s;
-			return true;
-		}
-	}
+    for (auto &existingShard : all_)
+    {
+        if (existingShard.ShardID != shard.ShardID)
+        {
+            continue;
+        }
+        existingShard = shard;
+        return true;
+    }
 
-	return false;
+    return false;
 }
 
-std::vector<std::shared_ptr<Shard>> ShardMemory::ShardsByClientApplication(const std::string &clientApp)
+Result<domain::Shards> ShardMemory::ShardsByClientApplication(const std::string clientApp)
 {
 	std::lock_guard<std::mutex> lock(mutex_);
-	std::vector<std::shared_ptr<Shard>> out;
-	for (const auto &shardPtr : all_)
-	{
-		if (shardPtr && shardPtr->ClientApplication == clientApp)
-		{
-			out.emplace_back(shardPtr);
-		}
-	}
-	return out;
+    domain::Shards out;
+    for (const auto shard : all_)
+    {
+        if (shard.ClientApplication != clientApp)
+        {
+            continue;
+        }
+        out.emplace_back(shard);
+    }
+    return out;
 }

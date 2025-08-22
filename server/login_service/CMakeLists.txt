@@ -1,20 +1,17 @@
-FILE(GLOB SRC *.cpp *.h)
+file(GLOB SRC *.cpp *.h)
 
-ADD_SUBDIRECTORY(entity)
-ADD_SUBDIRECTORY(storage)
+add_subdirectory(storage)
 
 
-ADD_LIBRARY(login_service STATIC ${SRC})
-TARGET_INCLUDE_DIRECTORIES(login_service
+add_library(login_service STATIC ${SRC})
+target_include_directories(login_service
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}/entity
         ${CMAKE_CURRENT_SOURCE_DIR}/storage
+        ${CMAKE_SOURCE_DIR}/include
 )
-TARGET_LINK_LIBRARIES(login_service
-    PUBLIC
-        login_entities
+target_link_libraries(login_service
     PRIVATE
         storage
 )
-SET_TARGET_PROPERTIES(login_service PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED YES)
+set_target_properties(login_service PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED YES)

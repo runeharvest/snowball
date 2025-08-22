@@ -2,106 +2,118 @@
 #include <algorithm>
 #include <expected>
 
-std::shared_ptr<User> UserMemory::CloneToPtr(const User &u)
+Result<domain::Users> UserMemory::Users()
 {
-	return std::make_shared<User>(u);
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    return all_;
 }
 
-std::expected<std::vector<std::shared_ptr<User>>, std::string>  UserMemory::Users()
+Result<domain::User> UserMemory::UserByLogin(const std::string login)
 {
-	std::vector<std::shared_ptr<User>> out;
-	out.reserve(all_.size());
-	for (auto &u : all_) out.emplace_back(u);
-	return out;
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    for (auto user : all_)
+    {
+        if (user.Login != login)
+        {
+            continue;
+        }
+        return user;
+    }
+
+    return std::unexpected("User not found");
 }
 
-std::shared_ptr<User> UserMemory::UserByLogin(const std::string &login)
+Result<domain::User> UserMemory::UserByUserID(int32_t userID)
 {
-	for (auto &u : all_)
-	{
-		if (u->Login == login)
-		{
-			return u;
-		}
-	}
-	return nullptr;
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    for (auto user : all_)
+    {
+        if (user.UserID == userID)
+        {
+            return user;
+        }
+    }
+    return std::unexpected("User not found");
 }
 
-std::shared_ptr<User> UserMemory::UserByUID(int32_t uid)
+Result<domain::Users> UserMemory::UsersByState(domain::UserState state)
 {
-	for (auto &u : all_)
-	{
-		if (u->UId == uid)
-		{
-			return u;
-		}
-	}
-	return nullptr;
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    domain::Users out;
+    for (auto user : all_)
+    {
+        if (user.State != state)
+        {
+            continue;
+        }
+
+        out.emplace_back(user);
+    }
+    return out;
 }
 
-std::vector<std::shared_ptr<User>> UserMemory::UsersByShardID(int32_t shardId)
+Result<domain::Users> UserMemory::UsersByShardID(int32_t shardID)
 {
-	std::vector<std::shared_ptr<User>> out;
-	for (auto &u : all_)
-	{
-		if (u->ShardID == shardId)
-		{
-			out.emplace_back(u);
-		}
-	}
-	return out;
+    std::lock_guard<std::mutex> lock(mutex_);
+    domain::Users out;
+    for (const auto &user : all_)
+    {
+        if (user.ShardID == shardID)
+        {
+            out.emplace_back(user);
+        }
+    }
+    return out;
 }
 
-std::vector<std::shared_ptr<User>> UserMemory::UsersByState(UserState state)
+Result<domain::User> UserMemory::UserByCookie(const std::string cookie)
 {
-	std::vector<std::shared_ptr<User>> out;
-	for (auto &u : all_)
-	{
-		if (u->State == state) out.emplace_back(u);
-	}
-	return out;
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    for (auto &user : all_)
+    {
+        if (user.Cookie.empty())
+        {
+            continue;
+        }
+        if (user.Cookie != cookie)
+        {
+            continue;
+        }
+        return user;
+    }
+    return std::unexpected("User not found");
 }
 
-std::shared_ptr<User> UserMemory::UserByCookie(const std::string &cookie)
+Result<domain::User> UserMemory::UserCreate(domain::User user)
 {
-	for (auto &u : all_)
-	{
-		if (u->Cookie.empty())
-		{
-			continue;
-		}
-		if (u->Cookie == cookie)
-		{
-			return u;
-		}
-	}
-	return nullptr;
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (user.UserID == 0)
+    {
+        user.UserID = nextId_;
+        nextId_++;
+    }
+
+    all_.push_back(user);
+    return user;
 }
 
-std::shared_ptr<User> UserMemory::UserCreate(const User &uIn)
+bool UserMemory::UserUpdate(const domain::User user)
 {
-	User u = uIn;
-	// assign id if not set or duplicate
-	if (u.UId <= 0)
-	{
-		while (std::any_of(all_.begin(), all_.end(), [&](const auto &userPtr) { return userPtr->UId == nextId_; })) ++nextId_;
-		u.UId = nextId_++;
-	}
+    std::lock_guard<std::mutex> lock(mutex_);
 
-	auto ptr = CloneToPtr(u);
-	all_.push_back(ptr);
-	return ptr;
-}
-
-bool UserMemory::UserUpdate(const User &u)
-{
-	for (auto &userPtr : all_)
-	{
-		if (userPtr->UId == u.UId)
-		{
-			*userPtr = u;
-			return true;
-		}
-	}
-	return false;
+    for (auto &existingUser : all_)
+    {
+        if (existingUser.UserID != user.UserID)
+        {
+            continue;
+        }
+        existingUser = user;
+        return true;
+    }
+    return false;
 }

@@ -233,7 +233,7 @@ Remove the CMakeCache.txt file and try again from another folder, e.g.:
 
 ENDMACRO(CHECK_OUT_OF_SOURCE)
 
-MACRO(NL_SETUP_DEFAULT_OPTIONS)  
+MACRO(NL_SETUP_DEFAULT_OPTIONS)
   ###
   # Features
   ###
@@ -284,7 +284,7 @@ MACRO(NL_SETUP_DEFAULT_OPTIONS)
   # GUI toolkits
   ###
   OPTION(WITH_GTK                 "With GTK Support"                              OFF)
-  
+
   IF(WIN32 AND MFC_FOUND)
     OPTION(WITH_MFC               "With MFC Support"                              ON )
   ELSE()
@@ -408,13 +408,6 @@ MACRO(ADD_PLATFORM_LINKFLAGS _FLAGS)
   SET(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} ${_FLAGS}")
 ENDMACRO()
 
-MACRO(CONVERT_VERSION_NUMBER _VERSION_NUMBER _BASE)
-  SET(${_VERSION_NUMBER} 0)
-  FOREACH(_ARG ${ARGN})
-    MATH(EXPR ${_VERSION_NUMBER} "${${_VERSION_NUMBER}} * ${_BASE} + ${_ARG}")
-  ENDFOREACH()
-ENDMACRO()
-
 MACRO(NL_SETUP_BUILD)
   #-----------------------------------------------------------------------------
   # Setup the buildmode variables.
@@ -434,7 +427,7 @@ MACRO(NL_SETUP_BUILD)
       SET(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
     ENDIF()
   ENDIF()
-  
+
   # set(nl_cpp_standard_set off)
   # if(cmake_cxx_compiler_id strequal "gnu" and cmake_cxx_compiler_version version_greater_equal 9)
   #   set(cmake_cxx_standard 17)
@@ -874,12 +867,6 @@ MACRO(NL_SETUP_BUILD)
         IF(IOS)
           SET(CMAKE_OSX_SYSROOT "" CACHE PATH "" FORCE)
 
-          IF(IOS_VERSION)
-            PARSE_VERSION_STRING(${IOS_VERSION} IOS_VERSION_MAJOR IOS_VERSION_MINOR IOS_VERSION_PATCH)
-            CONVERT_VERSION_NUMBER(${IOS_VERSION_MAJOR} ${IOS_VERSION_MINOR} ${IOS_VERSION_PATCH} IOS_VERSION_NUMBER)
-
-            ADD_PLATFORM_FLAGS("-D__IPHONE_OS_VERSION_MIN_REQUIRED=${IOS_VERSION_NUMBER}")
-          ENDIF()
 
           IF(CMAKE_IOS_SYSROOT)
             IF(TARGET_ARMV7S)
@@ -933,7 +920,7 @@ MACRO(NL_SETUP_BUILD)
             ADD_PLATFORM_LINKFLAGS("-Wl,-macosx_version_min,${CMAKE_OSX_DEPLOYMENT_TARGET}")
           ENDIF()
         ENDIF()
-        
+
         IF(NOT NL_CPP_STANDARD_SET)
           # use libc++ under OX X to be able to use new C++ features (and else it'll use GCC 4.2.1 STL)
           # minimum target is now OS X 10.7

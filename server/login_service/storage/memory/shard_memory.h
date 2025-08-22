@@ -1,11 +1,18 @@
 #pragma once
-#include "shard.h"
+#include <domain/shard.h>
 #include "shard_db.h"
 #include <unordered_map>
 #include <vector>
 #include <memory>
 #include <string>
 #include <mutex>
+#include <expected>
+namespace domain {
+struct Shard;
+}
+
+template <typename T>
+using Result = std::expected<T, std::string>;
 
 // In-memory ShardDB
 class ShardMemory final : public ShardDB
@@ -15,17 +22,15 @@ public:
 	~ShardMemory() override = default;
 
 	// ShardDB interface
-	std::vector<std::shared_ptr<Shard>> Shards() override;
-	std::shared_ptr<Shard> ShardByShardID(int32_t shardId) override;
-	std::shared_ptr<Shard> ShardByWSAddr(const std::string &wsAddr) override;
-	std::shared_ptr<Shard> ShardCreate(const Shard &s) override;
-	bool ShardUpdate(const Shard &s) override;
-	std::vector<std::shared_ptr<Shard>> ShardsByClientApplication(const std::string &clientApp) override;
+    [[nodiscard]] Result<domain::Shards> Shards() override;
+    [[nodiscard]] Result<domain::Shard> ShardByShardID(int32_t shardId) override;
+    [[nodiscard]] Result<domain::Shard> ShardByWSAddr(const std::string wsAddr) override;
+    [[nodiscard]] Result<domain::Shard> ShardCreate(const domain::Shard shard) override;
+    bool ShardUpdate(const domain::Shard s) override;
+    [[nodiscard]] Result<domain::Shards> ShardsByClientApplication(const std::string clientApp) override;
 
 private:
 	int32_t nextId_ = 0;
-	std::vector<std::shared_ptr<Shard>> all_;
-	mutable std::mutex mutex_;
-
-	static std::shared_ptr<Shard> CloneToPtr(const Shard &s);
+    domain::Shards all_;
+    mutable std::mutex mutex_;
 };

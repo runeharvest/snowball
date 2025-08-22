@@ -69,100 +69,107 @@ static void cbClientVerifyLoginPassword(CMessage &msgin, TSockId from, CCallback
 	msgin.serial(cpassword);
 	msgin.serial(application);
 
-	auto user = login_service->UserByLogin(login.toUtf8());
-	if (!user)
-	{
-		if (IService::getInstance()->ConfigFile.getVar("AcceptUnknownUsers").asInt() != 1)
-		{
-			reason = toString("Login '%s' doesn't exist", login.toUtf8().c_str());
-			CMessage msgout("VLP");
-			msgout.serial(reason);
-			netbase.send(msgout, from);
-			return;
-		}
+    auto user = loginService->UserByLogin(login.toUtf8());
+    if (!user)
+    {
+        if (IService::getInstance()->ConfigFile.getVar("AcceptUnknownUsers").asInt() != 1)
+        {
+            reason = toString("Login '%s' doesn't exist", login.toUtf8().c_str());
+            CMessage msgout("VLP");
+            msgout.serial(reason);
+            netbase.send(msgout, from);
+            return;
+        }
 
-		User newUser;
-		newUser.Login = login.toUtf8();
-		newUser.Password = cpassword;
-		newUser.State = UserState::Offline;
-		user = login_service->UserCreate(newUser);
-		if (!user)
-		{
-			reason = "Failed to create user";
-			CMessage msgout("VLP");
-			msgout.serial(reason);
-			netbase.send(msgout, from);
-			return;
-		}
-		nlinfo("The user %s was created for the application '%s'!", login.toUtf8().c_str(), application.c_str());
-	}
+        domain::User newUser;
+        newUser.Login = login.toUtf8();
+        newUser.Password = cpassword;
+        newUser.State = domain::UserState::Offline;
+        user = loginService->UserCreate(newUser);
+        if (!user)
+        {
+            reason = "Failed to create user";
+            CMessage msgout("VLP");
+            msgout.serial(reason);
+            netbase.send(msgout, from);
+            return;
+        }
+        nlinfo("The user %s was created for the application '%s'!", login.toUtf8().c_str(), application.c_str());
+    }
 
-	if (cpassword != user->Password)
-	{
-		reason = toString("Bad password");
-		CMessage msgout("VLP");
-		msgout.serial(reason);
-		netbase.send(msgout, from);
-		return;
-	}
+    if (cpassword != user->Password)
+    {
+        reason = toString("Bad password");
+        CMessage msgout("VLP");
+        msgout.serial(reason);
+        netbase.send(msgout, from);
+        return;
+    }
 
-	if (user->State != UserState::Offline)
-	{
-		// disconnect everyone
-		CMessage msgout("DC");
-		msgout.serial(uid);
-		CUnifiedNetwork::getInstance()->send("WS", msgout);
+    if (user->State != domain::UserState::Offline)
+    {
+        // disconnect everyone
+        CMessage msgout("DC");
+        msgout.serial(uid);
+        CUnifiedNetwork::getInstance()->send("WS", msgout);
 
-		reason = toString("User '%s' is already connected", login.toUtf8().c_str());
-		CMessage vplMsgout("VLP");
-		vplMsgout.serial(reason);
-		netbase.send(vplMsgout, from);
-		return;
-	}
+        reason = toString("User '%s' is already connected", login.toUtf8().c_str());
+        CMessage vplMsgout("VLP");
+        vplMsgout.serial(reason);
+        netbase.send(vplMsgout, from);
+        return;
+    }
 
-	uid = user->UId;
+    uid = user->UserID;
 
-	CLoginCookie c;
-	c.set((uint32)(uintptr_t)from, rand(), uid);
+    CLoginCookie c;
+    c.set((uint32)(uintptr_t)from, rand(), uid);
 
-	user->Cookie = c.setToString();
-	user->State = UserState::Online;
+    user->Cookie = c.setToString();
+    user->State = domain::UserState::Online;
 
-	if (!login_service->UserUpdate(*user))
-	{
-		reason = "Failed to update user cookie";
-		CMessage msgout("VLP");
-		msgout.serial(reason);
-		netbase.send(msgout, from);
-		return;
-	}
+    if (!loginService->UserUpdate(*user))
+    {
+        reason = "Failed to update user cookie";
+        CMessage msgout("VLP");
+        msgout.serial(reason);
+        netbase.send(msgout, from);
+        return;
+    }
 
-	auto shards = login_service->ShardsByClientApplication(application);
-	if (shards.empty())
-	{
-		reason = toString("No shard available for the application '%s'", application.c_str());
-		CMessage msgout("VLP");
-		msgout.serial(reason);
-		netbase.send(msgout, from);
-		return;
-	}
+    auto shardsResult = loginService->ShardsByClientApplication(application);
+    if (!shardsResult)
+    {
+        reason = toString("ShardsByClientApplication failed: %s", shardsResult.error());
+        CMessage msgout("VLP");
+        msgout.serial(reason);
+        netbase.send(msgout, from);
+        return;
+    }
+    auto &shards = *shardsResult;
 
-	// Send success message
-	CMessage msgout("VLP");
-	msgout.serial(reason);
+    // Send success message
+    CMessage msgout("VLP");
+    msgout.serial(reason);
 
-	uint32 shardCount = (uint32)shards.size();
-	msgout.serial(shardCount);
+    uint32 shardCount = (uint32)shards.size();
+    msgout.serial(shardCount);
 
-	for (const auto &shard : shards)
-	{
-		msgout.serial(shard->Name, shard->PlayerCount, shard->ShardID);
-	}
+    for (const auto &shard : shards)
+    {
+        ucstring shardName;
+        shardName.fromUtf8(shard.Name);
+        msgout.serial(shardName);
+        uint32 playerCount = shard.PlayerCount;
+        msgout.serial(playerCount);
+		uint32 shardID = shard.ShardID;
+        msgout.serial(shardID);
+    }
 
-	netbase.send(msgout, from);
-	netbase.authorizeOnly("CS", from);
+    netbase.send(msgout, from);
+    netbase.authorizeOnly("CS", from);
 
-	return;
+    return;
 }
 
 static void cbClientChooseShard(CMessage &msgin, TSockId from, CCallbackNetBase &netbase)
@@ -172,77 +179,85 @@ static void cbClientChooseShard(CMessage &msgin, TSockId from, CCallbackNetBase 
 	sint32 shardid;
 	msgin.serial(shardid);
 
-	auto users = login_service->UsersByState(UserState::Online);
-	if (users.empty())
-	{
-		reason = "No user found";
-		CMessage msgout("SCS");
-		msgout.serial(reason);
-		netbase.send(msgout, from);
-		return;
-	}
+    auto usersResult = loginService->UsersByState(domain::UserState::Online);
+    if (!usersResult)
+    {
+        reason = toString("UsersByState failed: %s", usersResult.error());
+        CMessage msgout("SCS");
+        msgout.serial(reason);
+        netbase.send(msgout, from);
+        return;
+    }
+    auto &users = *usersResult;
+    if (users.empty())
+    {
+        reason = "No user found";
+        CMessage msgout("SCS");
+        msgout.serial(reason);
+        netbase.send(msgout, from);
+        return;
+    }
+    domain::User *user = nullptr;
+    for (auto &u : users)
+    {
+        if (u.Cookie.empty())
+        {
+            continue;
+        }
 
-	std::shared_ptr<User> user;
+        CLoginCookie lc;
+        lc.setFromString(u.Cookie);
+        if (lc.getUserAddr() != (uint32)(uintptr_t)from)
+        {
+            continue;
+        }
 
-	for (const auto &u : users)
-	{
-		if (u->Cookie.empty())
-		{
-			continue;
-		}
+        user = &u;
+        break;
+    }
+    if (!user)
+    {
+        reason = "You are not authorized to select a shard";
+        CMessage msgout("SCS");
+        msgout.serial(reason);
+        netbase.send(msgout, from);
+        return;
+    }
 
-		CLoginCookie lc;
-		lc.setFromString(u->Cookie);
-		if (lc.getUserAddr() != (uint32)(uintptr_t)from)
-		{
-			continue;
-		}
+    auto shardResult = loginService->ShardByShardID(shardid);
+    if (!shardResult)
+    {
+        reason = "This shard is not available";
+        CMessage msgout("SCS");
+        msgout.serial(reason);
+        netbase.send(msgout, from);
+        return;
+    }
+    auto &shard = *shardResult;
 
-		user = u;
-		break;
-	}
-	if (!user)
-	{
-		reason = "You are not authorized to select a shard";
-		CMessage msgout("SCS");
-		msgout.serial(reason);
-		netbase.send(msgout, from);
-		return;
-	}
+    user->State = domain::UserState::Waiting;
+    user->ShardID = shard.ShardID;
 
-	auto shard = login_service->ShardByShardID(shardid);
-	if (!shard)
-	{
-		reason = "This shard is not available";
-		CMessage msgout("SCS");
-		msgout.serial(reason);
-		netbase.send(msgout, from);
-		return;
-	}
+    if (!loginService->UserUpdate(*user))
+    {
+        reason = "Failed to update user state";
+        CMessage msgout("SCS");
+        msgout.serial(reason);
+        netbase.send(msgout, from);
+        return;
+    }
 
-	user->State = UserState::Waiting;
-	user->ShardID = shard->ShardID;
-
-	if (!login_service->UserUpdate(*user))
-	{
-		reason = "Failed to update user state";
-		CMessage msgout("SCS");
-		msgout.serial(reason);
-		netbase.send(msgout, from);
-		return;
-	}
-
-	ucstring loginName;
-	loginName.fromUtf8(user->Login);
-	CLoginCookie lc;
-	lc.setFromString(user->Cookie);
-	CMessage msgout("CS");
-	ucstring shardName, userPrivilege, userExtendedPrivilege;
-	shardName.fromUtf8(shard->Name);
-	userPrivilege.fromUtf8(user->Privilege);
-	userExtendedPrivilege.fromUtf8(user->ExtendedPrivilege);
-	msgout.serial(lc, shardName, userPrivilege, userExtendedPrivilege);
-	CUnifiedNetwork::getInstance()->send(TServiceId(shard->ShardID), msgout);
+    ucstring loginName;
+    loginName.fromUtf8(user->Login);
+    CLoginCookie lc;
+    lc.setFromString(user->Cookie);
+    CMessage msgout("CS");
+    ucstring shardName, userPrivilege, userExtendedPrivilege;
+    shardName.fromUtf8(shard.Name);
+    userPrivilege.fromUtf8(user->Privilege);
+    userExtendedPrivilege.fromUtf8(user->ExtendedPrivilege);
+    msgout.serial(lc, shardName, userPrivilege, userExtendedPrivilege);
+    CUnifiedNetwork::getInstance()->send(TServiceId(shard.ShardID), msgout);
 }
 
 static void cbClientConnection(TSockId from, void *arg)
@@ -261,56 +276,56 @@ static void cbClientDisconnection(TSockId from, void *arg)
 
 	nldebug("new client disconnection: %s", ia.asString().c_str());
 
-	auto usersResp = login_service->Users();
-	if (!usersResp)
-	{
-		nlwarning("users: %s", usersResp.error());
-		return;
-	}
-	auto users = usersResp.value();
-	if (users.empty())
-	{
-		return;
-	}
+    auto usersResp = loginService->Users();
+    if (!usersResp)
+    {
+        nlwarning("users: %s", usersResp.error());
+        return;
+    }
+    auto users = usersResp.value();
+    if (users.empty())
+    {
+        return;
+    }
 
-	User *user = nullptr;
-	for (auto &u : users)
-	{
-		if (u->Cookie.empty())
-		{
-			continue;
-		}
+    domain::User *user = nullptr;
+    for (auto &u : users)
+    {
+        if (u.Cookie.empty())
+        {
+            continue;
+        }
 
-		CLoginCookie lc;
-		lc.setFromString(u->Cookie);
-		if (lc.getUserAddr() != (uint32)(uintptr_t)from)
-		{
-			continue;
-		}
+        CLoginCookie lc;
+        lc.setFromString(u.Cookie);
+        if (lc.getUserAddr() != (uint32)(uintptr_t)from)
+        {
+            continue;
+        }
 
-		if (u->State == UserState::Offline)
-		{
-			nldebug("User %s (%d) already offline, ignoring disconnection from %s", u->Login.c_str(), u->UId, ia.asString().c_str());
-			return;
-		}
+        if (u.State == domain::UserState::Offline)
+        {
+            nldebug("User %s (%d) already offline, ignoring disconnection from %s", u.Login.c_str(), u.UserID, ia.asString().c_str());
+            return;
+        }
 
-		user = u.get();
-		break;
-	}
+        user = &u;
+        break;
+    }
 
-	if (!user)
-	{
-		nldebug("No user found for disconnection from %s", ia.asString().c_str());
-		return;
-	}
+    if (!user)
+    {
+        nldebug("No user found for disconnection from %s", ia.asString().c_str());
+        return;
+    }
 
-	nlinfo("User %s (%d) disconnected from %s", user->Login.c_str(), user->UId, ia.asString().c_str());
-	user->State = UserState::Offline;
-	if (!login_service->UserUpdate(*user))
-	{
-		nlwarning("Failed to update user state for %s (%d)", user->Login.c_str(), user->UId);
-		return;
-	}
+    nlinfo("User %s (%d) disconnected from %s", user->Login.c_str(), user->UserID, ia.asString().c_str());
+    user->State = domain::UserState::Offline;
+    if (!loginService->UserUpdate(*user))
+    {
+        nlwarning("Failed to update user state for %s (%d)", user->Login.c_str(), user->UserID);
+        return;
+    }
 }
 
 const TCallbackItem ClientCallbackArray[] = {
@@ -327,51 +342,51 @@ static void cbWSShardChooseShard(CMessage &msgin, const std::string &serviceName
 	msgin.serial(reason);
 	msgin.serial(cookie);
 
-	auto user = login_service->UserByCookie(cookie.toString());
-	if (!user)
-	{
-		reason = "User not found for cookie";
-		nldebug("SCS from WS failed: %s", reason.c_str());
-		msgout.serial(reason);
-		CUnifiedNetwork::getInstance()->send(serviceName, msgout);
-		return;
-	}
+    auto user = loginService->UserByCookie(cookie.toString());
+    if (!user)
+    {
+        reason = "User not found for cookie";
+        nldebug("SCS from WS failed: %s", reason.c_str());
+        msgout.serial(reason);
+        CUnifiedNetwork::getInstance()->send(serviceName, msgout);
+        return;
+    }
 
-	if (user->State != UserState::Online)
-	{
-		reason = "User is not online";
-		nldebug("SCS from WS failed: %s", reason.c_str());
-		msgout.serial(reason);
-		CUnifiedNetwork::getInstance()->send(serviceName, msgout);
-		return;
-	}
+    if (user->State != domain::UserState::Online)
+    {
+        reason = "User is not online";
+        nldebug("SCS from WS failed: %s", reason.c_str());
+        msgout.serial(reason);
+        CUnifiedNetwork::getInstance()->send(serviceName, msgout);
+        return;
+    }
 
-	if (user->ShardID == 0)
-	{
-		reason = "User has no shard selected";
-		nldebug("SCS from WS failed: %s", reason.c_str());
-		msgout.serial(reason);
-		CUnifiedNetwork::getInstance()->send(serviceName, msgout);
-		return;
-	}
+    if (user->ShardID == 0)
+    {
+        reason = "User has no shard selected";
+        nldebug("SCS from WS failed: %s", reason.c_str());
+        msgout.serial(reason);
+        CUnifiedNetwork::getInstance()->send(serviceName, msgout);
+        return;
+    }
 
-	auto shard = login_service->ShardByShardID(user->ShardID);
-	if (!shard)
-	{
-		reason = "Shard not found for user";
-		nldebug("SCS from WS failed: %s", reason.c_str());
-		msgout.serial(reason);
-		CUnifiedNetwork::getInstance()->send(serviceName, msgout);
-		return;
-	}
+    auto shard = loginService->ShardByShardID(user->ShardID);
+    if (!shard)
+    {
+        reason = "Shard not found for user";
+        nldebug("SCS from WS failed: %s", reason.c_str());
+        msgout.serial(reason);
+        CUnifiedNetwork::getInstance()->send(serviceName, msgout);
+        return;
+    }
 
-	msgout.serial(reason);
-	string str = cookie.setToString();
-	msgout.serial(str);
-	string addr;
-	msgin.serial(addr);
-	msgout.serial(addr);
-	ClientsServer->send(msgout, (TSockId)cookie.getUserAddr()); // FIXME: 64-bit
+    msgout.serial(reason);
+    string str = cookie.setToString();
+    msgout.serial(str);
+    string addr;
+    msgin.serial(addr);
+    msgout.serial(addr);
+    ClientsServer->send(msgout, (TSockId)cookie.getUserAddr()); // FIXME: 64-bit
 }
 
 static const TUnifiedCallbackItem WSCallbackArray[] = {

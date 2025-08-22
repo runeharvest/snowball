@@ -7,9 +7,8 @@
   },
   "configurePresets": [
     {
-      "name": "linux",
-      "displayName": "Linux",
-      "description": "Debug build with debug info",
+      "name": "linux-debug",
+      "displayName": "Linux Debug",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
@@ -18,47 +17,23 @@
         "CMAKE_CXX_COMPILER_LAUNCHER": "ccache",
         "CMAKE_C_COMPILER": "/usr/bin/gcc",
         "CMAKE_CXX_COMPILER": "/usr/bin/g++",
-        "WITH_SNOWBALLS_SERVER": "ON",
         "WITH_SNOWBALLS_CLIENT": "ON",
-        "WITH_SNOWBALLS_PACKAGE": "OFF",
-        "WITH_LUA52": "ON",
-        "WITH_TOOLS": "OFF",
-        "WITH_NEL_TOOLS": "OFF",
-        "WITH_SOUND": "OFF"
+        "WITH_SNOWBALLS_SERVER": "ON"
       }
     },
     {
-      "name": "linux-server",
-      "displayName": "Linux Server Only",
-      "description": "Debug build with debug info",
+      "name": "linux-release",
+      "displayName": "Linux Release",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_C_COMPILER_LAUNCHER": "ccache",
         "CMAKE_CXX_COMPILER_LAUNCHER": "ccache",
         "CMAKE_C_COMPILER": "/usr/bin/gcc",
         "CMAKE_CXX_COMPILER": "/usr/bin/g++",
-        "WITH_SNOWBALLS_SERVER": "ON",
-        "WITH_SNOWBALLS_CLIENT": "OFF",
-        "WITH_SNOWBALLS_PACKAGE": "ON"
-      }
-    },
-    {
-      "name": "linux-client",
-      "displayName": "Linux Client Only",
-      "description": "Debug build with debug info",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_C_COMPILER_LAUNCHER": "ccache",
-        "CMAKE_CXX_COMPILER_LAUNCHER": "ccache",
-        "CMAKE_C_COMPILER": "/usr/bin/gcc",
-        "CMAKE_CXX_COMPILER": "/usr/bin/g++",
-        "WITH_SNOWBALLS_SERVER": "ON",
-        "WITH_SNOWBALLS_CLIENT": "OFF",
-        "WITH_SNOWBALLS_PACKAGE": "ON"
+        "WITH_SNOWBALLS_CLIENT": "ON",
+        "WITH_SNOWBALLS_SERVER": "ON"
       }
     },
     {

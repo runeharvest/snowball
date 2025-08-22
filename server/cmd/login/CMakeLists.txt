@@ -10,6 +10,7 @@ TARGET_INCLUDE_DIRECTORIES(login
 		${CMAKE_CURRENT_SOURCE_DIR}/../../../login_service
 		${CMAKE_CURRENT_SOURCE_DIR}/../../../login_service/storage
 		${CMAKE_CURRENT_SOURCE_DIR}/../../../login_service/storage/memory
+		${CMAKE_SOURCE_DIR}/include
 )
 
 TARGET_LINK_LIBRARIES(login

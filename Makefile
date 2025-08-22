@@ -31,3 +31,7 @@ gdb-%:
 
 format:
 	@find . -type f \( -name '*.cpp' -o -name '*.h' -o -name '*.hpp' -o -name '*.c' \) -print0 | xargs -0 clang-format -i
+
+clean:
+	@echo "Cleaning build directory..."
+	@rm -rf build
