@@ -1,0 +1,29 @@
+[login]
+
+displayed_variables = [
+    "@Shards|shards",
+    "@RegUsers|registeredUsers",
+    "@OnlineUsers|onlineUsers",
+    "OnlineUsers|OnlineUsersNumber"
+]
+
+ws_port = 49999         # port for the welcome service connection (default is 49999)
+web_port = 49998        # port for the web server (default 49998)
+client_port = 49997     # port for the clients connection (default 49997)
+
+is_external_shard_allowed = true    # true if you want to accept external shard that are not in database
+is_unknown_user_allowed = true      # true if you want to accept users that are not in database
+is_user_creation_allowed = true    # true if you want to allow user creation
+beep = false                   # true if you want to beep when a new client comes
+
+database_host = "localhost"     # name of the host where the mysql database is (empty string means localhost)
+database_name = "nel"           # name of the database where we can find needed info
+database_username = "root"      # if we need a login to access the database
+database_password = ""         # if we need a password to access the database
+
+force_database_reconnection = "dummy" # change this value to force a configfile reload and reconnection to the database
+
+is_naming_service_used = false
+is_aes_used = false
+
+shard_id = 1

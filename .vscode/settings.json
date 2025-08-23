@@ -82,7 +82,8 @@
         "typeindex": "cpp",
         "valarray": "cpp",
         "any": "cpp",
-        "regex": "cpp"
+        "regex": "cpp",
+        "forward_list": "cpp"
     },
     "search.exclude": {
         "**/node_modules": true,

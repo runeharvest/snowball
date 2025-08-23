@@ -373,6 +373,8 @@ IF(WITH_SNOWBALLS_SERVER)
   ADD_SUBDIRECTORY(server)
 ENDIF()
 
+add_subdirectory(config_service)
+
 
 IF(WITH_NEL_TESTS)
   ENABLE_TESTING()

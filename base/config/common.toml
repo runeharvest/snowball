@@ -1,0 +1,15 @@
+[common]
+
+window_style = "WIN"
+
+ns_host = "localhost"
+
+use_aes = false
+
+neg_filters_debug = ["NETL", "NET"]
+neg_filters_info = ["NETL"]
+neg_filters_warning = [""]
+
+default_email_smtp = "smtp"
+default_email_from = "snowballs2@kaetemi.be"
+default_email_to = "opennel@kaetemi.be"

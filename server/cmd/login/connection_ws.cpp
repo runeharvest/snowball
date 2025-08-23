@@ -61,12 +61,13 @@ static void cbWSConnection(const std::string &serviceName, TServiceId sid, void 
 
 	nldebug("new potential shard: %s", ia.asString().c_str());
 
-	// if we accept external shard, don't need to check if address is valid
-	if (IService::getInstance()->ConfigFile.getVar("AcceptExternalShards").asInt() == 1)
+	if (configService->ValueBool("login", "is_external_shard_allowed") != true)
+	{
 		return;
+	}
 
-    auto shard = loginService->ShardByWSAddr(ia.ipAddress());
-    if (!shard)
+	auto shard = loginService->ShardByWSAddr(ia.ipAddress());
+	if (!shard)
     {
         refuseShard(sid, "Bad shard identification, the shard (WSAddr %s) is not in the database and can't be added", ia.ipAddress().c_str());
         return;
@@ -153,8 +154,8 @@ static void cbWSIdentification(CMessage &msgin, const std::string &serviceName, 
     auto shard = loginService->ShardByShardID(shardId);
     if (!shard)
     {
-        if (IService::getInstance()->ConfigFile.getVar("AcceptExternalShards").asInt() != 1)
-        {
+		if (configService->ValueBool("login", "is_external_shard_allowed") != true)
+		{
             refuseShard(sid, "Bad shard identification, The shard %d is not in the database and can't be added", shardId);
             return;
         }

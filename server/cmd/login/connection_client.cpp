@@ -72,22 +72,34 @@ static void cbClientVerifyLoginPassword(CMessage &msgin, TSockId from, CCallback
     auto user = loginService->UserByLogin(login.toUtf8());
     if (!user)
     {
-        if (IService::getInstance()->ConfigFile.getVar("AcceptUnknownUsers").asInt() != 1)
-        {
-            reason = toString("Login '%s' doesn't exist", login.toUtf8().c_str());
-            CMessage msgout("VLP");
-            msgout.serial(reason);
-            netbase.send(msgout, from);
-            return;
-        }
+		auto isUnknownUserAllowed = configService->ValueBool("login", "is_unknown_user_allowed");
+		if (!isUnknownUserAllowed)
+		{
+			reason = toString("Login '%s' doesn't exist", login.toUtf8().c_str());
+			CMessage msgout("VLP");
+			msgout.serial(reason);
+			netbase.send(msgout, from);
+			return;
+		}
 
-        domain::User newUser;
-        newUser.Login = login.toUtf8();
-        newUser.Password = cpassword;
-        newUser.State = domain::UserState::Offline;
-        user = loginService->UserCreate(newUser);
-        if (!user)
-        {
+		// create the user
+		auto isUserCreationAllowed = configService->ValueBool("login", "is_user_creation_allowed");
+		if (!isUserCreationAllowed)
+		{
+			reason = toString("Login '%s' doesn't exist", login.toUtf8().c_str());
+			CMessage msgout("VLP");
+			msgout.serial(reason);
+			netbase.send(msgout, from);
+			return;
+		}
+
+		domain::User newUser;
+		newUser.Login = login.toUtf8();
+		newUser.Password = cpassword;
+		newUser.State = domain::UserState::Offline;
+		user = loginService->UserCreate(newUser);
+		if (!user)
+		{
             reason = "Failed to create user";
             CMessage msgout("VLP");
             msgout.serial(reason);
@@ -400,8 +412,7 @@ void connectionClientInit()
 	ClientsServer = new CCallbackServer();
 	nlassert(ClientsServer != 0);
 
-	uint16 port = (uint16)IService::getInstance()->ConfigFile.getVar("ClientsPort").asInt();
-	ClientsServer->init(port);
+	ClientsServer->init((uint16)configService->ValueInt32("login", "client_port"));
 
 	ClientsServer->addCallbackArray(ClientCallbackArray, sizeof(ClientCallbackArray) / sizeof(ClientCallbackArray[0]));
 	ClientsServer->setConnectionCallback(cbClientConnection, 0);

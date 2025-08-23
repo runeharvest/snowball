@@ -61,6 +61,7 @@
 #include "storage/memory/user_memory.h"
 #include <domain/user.h>
 #include <domain/shard.h>
+#include "config_toml.h" // Add this include if ConfigToml is defined here
 
 //
 // Namespaces
@@ -86,6 +87,7 @@ NLMISC::CLog *Output = NULL;
 
 vector<CShard> Shards;
 LoginService *loginService = nullptr;
+ConfigService *configService = nullptr;
 
 static ShardMemory shardMemory;
 static UserMemory userMemory;
@@ -271,18 +273,116 @@ void displayUsers()
 ////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
+void configValidate()
+{
+
+	auto displayedVariablesResult = configService->ValuesResult("login", "displayed_variables");
+	if (!displayedVariablesResult)
+	{
+		nlerror("Failed to validate config: %s", displayedVariablesResult.error().c_str());
+	}
+
+	auto wsPortResult = configService->ValueInt32Result("login", "ws_port");
+	if (!wsPortResult)
+	{
+		nlerror("Failed to validate ws_port: %s", wsPortResult.error().c_str());
+	}
+
+	auto webPortResult = configService->ValueInt32Result("login", "web_port");
+	if (!webPortResult)
+	{
+		nlerror("Failed to validate web_port: %s", webPortResult.error().c_str());
+	}
+
+	auto clientPortResult = configService->ValueInt32Result("login", "client_port");
+	if (!clientPortResult)
+	{
+		nlerror("Failed to validate client_port: %s", clientPortResult.error().c_str());
+	}
+
+	auto isExteranlShardAllowed = configService->ValueBoolResult("login", "is_external_shard_allowed");
+	if (!isExteranlShardAllowed)
+	{
+		nlerror("Failed to validate is_external_shard_allowed: %s", isExteranlShardAllowed.error().c_str());
+	}
+
+	auto isUnknownUserAllowedResult = configService->ValueBoolResult("login", "is_unknown_user_allowed");
+	if (!isUnknownUserAllowedResult)
+	{
+		nlerror("Failed to validate is_unknown_user_allowed: %s", isUnknownUserAllowedResult.error().c_str());
+	}
+
+	auto isUnknownUserCreationAllowedResult = configService->ValueBoolResult("login", "is_user_creation_allowed");
+	if (!isUnknownUserCreationAllowedResult)
+	{
+		nlerror("Failed to validate is_user_creation_allowed: %s", isUnknownUserCreationAllowedResult.error().c_str());
+	}
+
+	auto beepResult = configService->ValueBoolResult("login", "beep");
+	if (!beepResult)
+	{
+		nlerror("Failed to validate beep: %s", beepResult.error().c_str());
+	}
+
+	auto databaseHostResult = configService->ValueResult("login", "database_host");
+	if (!databaseHostResult)
+	{
+		nlerror("Failed to validate database host: %s", databaseHostResult.error().c_str());
+	}
+
+	auto databaseNameResult = configService->ValueResult("login", "database_name");
+	if (!databaseNameResult)
+	{
+		nlerror("Failed to validate database name: %s", databaseNameResult.error().c_str());
+	}
+
+	auto databaseUserResult = configService->ValueResult("login", "database_username");
+	if (!databaseUserResult)
+	{
+		nlerror("Failed to validate database user: %s", databaseUserResult.error().c_str());
+	}
+
+	auto databasePasswordResult = configService->ValueResult("login", "database_password");
+	if (!databasePasswordResult)
+	{
+		nlerror("Failed to validate database password: %s", databasePasswordResult.error().c_str());
+	}
+
+	auto databaseForceReconnectionResult = configService->ValueResult("login", "force_database_reconnection");
+	if (!databaseForceReconnectionResult)
+	{
+		nlerror("Failed to validate force_database_reconnection: %s", databaseForceReconnectionResult.error().c_str());
+	}
+
+	auto isNamingServiceUsedResult = configService->ValueBoolResult("login", "is_naming_service_used");
+	if (!isNamingServiceUsedResult)
+	{
+		nlerror("Failed to validate is_naming_service_used: %s", isNamingServiceUsedResult.error().c_str());
+	}
+
+	auto isAesUsed = configService->ValueBoolResult("login", "is_aes_used");
+	if (!isAesUsed)
+	{
+		nlerror("Failed to validate is_aes_used: %s", isAesUsed.error().c_str());
+	}
+
+	auto shardIDResult = configService->ValueInt32Result("login", "shard_id");
+	if (!shardIDResult)
+	{
+		nlerror("Failed to validate shard_id: %s", shardIDResult.error().c_str());
+	}
+}
+
 void beep(uint freq, uint nb, uint beepDuration, uint pauseDuration)
 {
 #ifdef NL_OS_WINDOWS
 	try
 	{
-		if (IService::getInstance()->ConfigFile.getVar("Beep").asInt() == 1)
+		if (configService->ValueBool("login", "beep") == false) return;
+		for (uint i = 0; i < nb; i++)
 		{
-			for (uint i = 0; i < nb; i++)
-			{
-				Beep(freq, beepDuration);
-				nlSleep(pauseDuration);
-			}
+			Beep(freq, beepDuration);
+			nlSleep(pauseDuration);
 		}
 	}
 	catch (Exception &)
@@ -303,12 +403,22 @@ public:
 	{
 		beep();
 
+		auto configToml = new ConfigToml();
+		configService = new ConfigService(*configToml);
+		auto parseResult = configService->Load("config/", "login");
+		if (!parseResult)
+		{
+			nlerror("Failed to load config: %s", parseResult.error().c_str());
+		}
+
+		configValidate();
+
 		loginService = new LoginService(shardMemory, userMemory);
 
-        domain::Shard shard;
-        shard.Account = "Test";
-        loginService->ShardCreate(shard);
-        // nlinfo("shard created with id %d", shard.ShardID);
+		domain::Shard shard;
+		shard.Account = "Test";
+		loginService->ShardCreate(shard);
+		// nlinfo("shard created with id %d", shard.ShardID);
         // auto newShard = loginService->ShardByShardID(0);
         // if (newShard == nullptr)
         // {

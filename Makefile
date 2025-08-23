@@ -9,6 +9,8 @@ init:
 	@-unlink build/bin/data 2>/dev/null || true
 	@cd base && unzip -qq -o data.zip
 	@cd build/bin && ln -s ../../base/data data
+	@-unlink build/bin/config 2>/dev/null || true
+	@cd build/bin && ln -s ../../base/config config
 	@echo "Done"
 
 

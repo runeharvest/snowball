@@ -38,6 +38,7 @@ typedef unsigned long ulong;
 #include "nel/misc/log.h"
 
 #include "login_service.h"
+#include "config_service.h"
 #include "nel/net/service.h"
 
 using namespace std;
@@ -45,6 +46,8 @@ using namespace NLMISC;
 using namespace NLNET;
 
 extern LoginService *loginService;
+extern ConfigService *configService;
+
 // Structures
 
 struct CFrontEnd
@@ -92,6 +95,8 @@ void displayShards();
 void displayUsers();
 sint findUser(uint32 Id);
 void beep(uint freq = 400, uint nb = 2, uint beepDuration = 100, uint pauseDuration = 100);
+
+void configValidate();
 
 /*
  * disconnectClient is true if we need to disconnect the client on connected on the login system (during the login process)
