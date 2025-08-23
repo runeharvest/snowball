@@ -1350,17 +1350,17 @@ sint main(int argc, char **argv)
 		return true;
 	}
 
-	NLMISC_COMMAND(quit, "quit the client", "")
-	{
-		// check args, if there s not the right number of parameter, return bad
-		if (args.size() != 0) return false;
+	// NLMISC_COMMAND(quit, "quit the client", "")
+	// {
+	// 	// check args, if there s not the right number of parameter, return bad
+	// 	if (args.size() != 0) return false;
 
-		log.displayNL("Exit requested");
+	// 	log.displayNL("Exit requested");
 
-		SBCLIENT::NextGameState = SBCLIENT::GameStateExit;
+	// 	SBCLIENT::NextGameState = SBCLIENT::GameStateExit;
 
-		return true;
-	}
+	// 	return true;
+	// }
 
 	NLMISC_COMMAND(sb_offline, "go offline", "")
 	{

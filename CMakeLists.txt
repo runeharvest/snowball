@@ -28,12 +28,6 @@ option(RYZOM_CLIENT_APP_NAME               "core4")
 option(RYZOM_CLIENT_RELEASENOTES_URL       "https://core4.ryzom.dev/releasenotes/index.php")
 option(RYZOM_CLIENT_RELEASENOTES_RING_URL  "https://core4.ryzom.dev/releasenotes_ring/index.php")
 option(RYZOM_CLIENT_UI_FEATURE_FLAG        "ryzomcore")
-option(NL_VERSION_MAJOR ${RyzomCore_VERSION_MAJOR})
-option(NL_VERSION_MINOR ${RyzomCore_VERSION_MINOR})
-option(NL_VERSION_PATCH ${RyzomCore_VERSION_PATCH})
-option(NL_VERSION_BUILD ${RyzomCore_VERSION_TWEAK})
-option(YEAR "2001-${CURRENT_YEAR}")
-option(AUTHOR "Rune Harvest Community, with Winch Gate and The Ryzom Core Community")
 
 
 
@@ -80,6 +74,16 @@ IF(CMAKE_VERSION VERSION_GREATER "2.8.10")
 ELSE()
   SET(CURRENT_YEAR "2019")
 ENDIF()
+
+
+PROJECT(RyzomCore VERSION 4.1.0.0 LANGUAGES CXX C)
+SET(NL_VERSION_MAJOR ${RyzomCore_VERSION_MAJOR})
+SET(NL_VERSION_MINOR ${RyzomCore_VERSION_MINOR})
+SET(NL_VERSION_PATCH ${RyzomCore_VERSION_PATCH} CACHE STRING "Patch version")
+SET(NL_VERSION_BUILD ${RyzomCore_VERSION_TWEAK} CACHE STRING "Build number")
+SET(YEAR "2001-${CURRENT_YEAR}")
+SET(AUTHOR "Winch Gate and The Ryzom Core Community")
+
 
 #-----------------------------------------------------------------------------
 # Redirect output files
