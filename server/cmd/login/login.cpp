@@ -59,6 +59,7 @@
 #include "login_service.h"
 #include "storage/memory/shard_memory.h"
 #include "storage/memory/user_memory.h"
+#include "message/nel/nel_message.h"
 #include <domain/user.h>
 #include <domain/shard.h>
 #include "config_toml.h" // Add this include if ConfigToml is defined here
@@ -87,10 +88,13 @@ NLMISC::CLog *Output = NULL;
 
 vector<CShard> Shards;
 LoginService *loginService = nullptr;
-ConfigService *configService = nullptr;
-
 static ShardMemory shardMemory;
 static UserMemory userMemory;
+
+ConfigService *configService = nullptr;
+
+NetworkService *netListener = nullptr;
+static NelMessage nelMessage;
 
 //
 // Functions
@@ -279,7 +283,7 @@ void configValidate()
 	auto displayedVariablesResult = configService->ValuesResult("login", "displayed_variables");
 	if (!displayedVariablesResult)
 	{
-		nlerror("Failed to validate config: %s", displayedVariablesResult.error().c_str());
+		nlerror("Failed to validate displayed_variables: %s", displayedVariablesResult.error().c_str());
 	}
 
 	auto wsPortResult = configService->ValueInt32Result("login", "ws_port");
@@ -413,6 +417,29 @@ public:
 
 		configValidate();
 
+		netListener = new NetworkService(nelMessage);
+		auto netInitResult = netListener->Listen("", (uint8_t)8191);
+		if (!netInitResult)
+		{
+			nlerror("Failed to initialize network listener: %s", netInitResult.error().c_str());
+		}
+
+		auto nelConnectMessage = new NelMessage();
+
+		auto netConnect = new NetworkService(*nelConnectMessage);
+		auto netConnectResult = netConnect->Connect("127.0.0.1", (uint8_t)8191);
+		if (!netConnectResult)
+		{
+			nlerror("Failed to connect to network: %s", netConnectResult.error().c_str());
+		}
+
+		nlinfo("network connected?");
+		auto sendResult = netConnect->SendRaw("hello world!");
+		if (!sendResult)
+		{
+			nlerror("Failed to send: %s", sendResult.error().c_str());
+		}
+
 		loginService = new LoginService(shardMemory, userMemory);
 
 		domain::Shard shard;
@@ -469,7 +496,6 @@ public:
 	}
 
 private:
-	LoginService *loginService;
 };
 
 // Service instantiation

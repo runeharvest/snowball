@@ -36,7 +36,7 @@
 
 // We're using the NeL Service framework and layer 5
 #include <nel/net/service.h>
-#include <nel/net/login_server.h>
+#include "login_server.h"
 
 #include <map>
 #include <utility>

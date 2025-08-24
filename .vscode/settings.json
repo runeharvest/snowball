@@ -99,6 +99,7 @@
     "cmake.useCMakePresets": "always",
     "cmake.enableAutomaticKitScan": false,
     "cmake.cmakePath": "/usr/local/bin/cmake",
+    "cmake.buildDirectory": "${workspaceFolder}/build",
     "[cpp]": {
         "editor.formatOnSave": true,
         "editor.defaultFormatter": "xaver.clang-format",

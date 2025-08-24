@@ -10,15 +10,20 @@ TARGET_INCLUDE_DIRECTORIES(login
 		${CMAKE_CURRENT_SOURCE_DIR}/../../../login_service
 		${CMAKE_CURRENT_SOURCE_DIR}/../../../login_service/storage
 		${CMAKE_CURRENT_SOURCE_DIR}/../../../login_service/storage/memory
+		${CMAKE_CURRENT_SOURCE_DIR}/../../../network_service
+		${CMAKE_CURRENT_SOURCE_DIR}/../../../network_service/message
+		${CMAKE_CURRENT_SOURCE_DIR}/../../../network_service/message/nel
 		${CMAKE_SOURCE_DIR}/config_service/
 		${CMAKE_SOURCE_DIR}/config_service/config
 		${CMAKE_SOURCE_DIR}/config_service/config/toml
 		${CMAKE_SOURCE_DIR}/include
+
 )
 
 TARGET_LINK_LIBRARIES(login
 						login_service
 						config_service
+						network_service
 						${ZLIB_LIBRARIES}
 						nelmisc
 						nelnet)

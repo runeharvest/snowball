@@ -39,6 +39,8 @@ typedef unsigned long ulong;
 
 #include "login_service.h"
 #include "config_service.h"
+#include "network_service.h"
+
 #include "nel/net/service.h"
 
 using namespace std;
@@ -47,6 +49,7 @@ using namespace NLNET;
 
 extern LoginService *loginService;
 extern ConfigService *configService;
+extern NetworkService *netListener;
 
 // Structures
 
