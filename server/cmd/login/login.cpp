@@ -418,7 +418,7 @@ public:
 		configValidate();
 
 		netListener = new NetworkService(nelMessage);
-		auto netInitResult = netListener->Listen("", (uint8_t)8191);
+		auto netInitResult = netListener->ListenTCP("", (uint8_t)8191);
 		if (!netInitResult)
 		{
 			nlerror("Failed to initialize network listener: %s", netInitResult.error().c_str());
@@ -427,7 +427,7 @@ public:
 		auto nelConnectMessage = new NelMessage();
 
 		auto netConnect = new NetworkService(*nelConnectMessage);
-		auto netConnectResult = netConnect->Connect("127.0.0.1", (uint8_t)8191);
+		auto netConnectResult = netConnect->ConnectTCP("127.0.0.1", (uint8_t)8191);
 		if (!netConnectResult)
 		{
 			nlerror("Failed to connect to network: %s", netConnectResult.error().c_str());
@@ -491,6 +491,11 @@ public:
 	{
 		connectionWSRelease();
 		connectionClientRelease();
+		auto closeResult = netListener->Close();
+		if (!closeResult)
+		{
+			nlwarning("Failed to close net listener: %s", closeResult.error().c_str());
+		}
 
 		Output->displayNL("Login Service released");
 	}

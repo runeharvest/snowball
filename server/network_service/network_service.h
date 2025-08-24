@@ -16,11 +16,13 @@ public:
 	}
 	virtual ~NetworkService() = default;
 
-	[[nodiscard]] virtual Result<void> Connect(std::string host, uint8_t port);
+	[[nodiscard]] virtual Result<void> ConnectUDP(std::string host, uint8_t port);
+	[[nodiscard]] virtual Result<void> ConnectTCP(std::string host, uint8_t port);
 	[[nodiscard]] virtual Result<void> Close();
 	[[nodiscard]] virtual Result<void> SendRaw(std::string message);
 
-	[[nodiscord]] virtual Result<void> Listen(std::string host, uint8_t port);
+	[[nodiscord]] virtual Result<void> ListenUDP(std::string host, uint8_t port);
+	[[nodiscord]] virtual Result<void> ListenTCP(std::string host, uint8_t port);
 
 protected:
 	MessageDB &messageDB_;

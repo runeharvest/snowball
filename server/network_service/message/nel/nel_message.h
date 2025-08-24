@@ -8,6 +8,8 @@
 #include <mutex>
 #include <expected>
 #include <thread>
+#include <netinet/in.h>
+#include <atomic>
 
 template <typename T>
 using Result = std::expected<T, std::string>;
@@ -19,17 +21,21 @@ public:
 	NelMessage() = default;
 	~NelMessage() override = default;
 
-
-	[[nodiscard]] Result<void> Connect(std::string host, uint8_t port) override;
+	[[nodiscard]] Result<void> ConnectUDP(std::string host, uint8_t port) override;
+	[[nodiscard]] Result<void> ConnectTCP(std::string host, uint8_t port) override;
 	[[nodiscard]] Result<void> Close() override;
 	[[nodiscard]] Result<void> SendRaw(std::string message) override;
 
-	[[nodiscard]] Result<void> Listen(std::string host, uint8_t port) override;
+	[[nodiscard]] Result<void> ListenUDP(std::string host, uint8_t port) override;
+	[[nodiscard]] Result<void> ListenTCP(std::string host, uint8_t port) override;
 
 private:
 	void pollMessages();
-    mutable std::mutex mutex_;
+	void handleClient(int client_fd);
+	mutable std::mutex mutex_;
+	void handleUDPMessage(const char *buffer, ssize_t bytes_received, const sockaddr_in &client_addr);
 	int socket_fd_{-1};
-	bool polling_{false};
+	std::atomic<bool> polling_ { false };
+	bool is_tcp_ { false };
 	std::thread poll_thread_;
 };
